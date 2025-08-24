@@ -1,13 +1,9 @@
-// Elements
-const E = {}
-const ids = ['canvas', 'counter', 'hud']
-ids.forEach(id => E[id] = document.getElementById(id));
-
 // State
 const S = {
   canvas: {
-    size: [window.innerWidth*5, window.innerHeight*5],
-    zoom: 400,
+    size: [window.innerWidth, window.innerHeight],
+    gravity: 10,
+    cats: [],
   },
   cats: {
     balance: 0,
@@ -20,72 +16,67 @@ const S = {
   count: 0,
 }
 
+// Elements
+const E = {}
+const ids = ['canvas', 'counter', 'hud']
+ids.forEach(id => E[id] = document.getElementById(id));
+
 // Canvas
 E.canvas.width = S.canvas.size[0];
 E.canvas.height = S.canvas.size[1];
 const ctx = E.canvas.getContext('2d');
 ctx.fillStyle = 'black';
 
-// Zoom the canvas out
-const scaleCanvas = () => {
-  if (S.meta.magnitude < 1) {
-    S.canvas.zoom = 100/(1 + Math.log10(S.count))
-    canvas.style.zoom = `${S.canvas.zoom}%`
-  } else {
-    canvas.style.zoom = `100%`
-  }
-}
-
 // Cat
 class Cat {
   constructor(props) {
-    this.label = ''
-    this.size = 100
-    if (props?.coordinates) {
-      this.coordinates = [(S.canvas.size[0] - this.size)/2 + props.coordinates[0], (S.canvas.size[1] - this.size)/2 + props.coordinates[1]]
-      console.log(this.coordinates)
-    } else {
-      this.position()
-    }
-
-    if (props?.mega) {
-      this.size = 1000;
-    }
+    this.size = this.mega ? 100 : 50 - Math.sqrt(S.count)/1000**S.meta.magnitude
+    this.coordinates = [(Math.random()-0.5)*((S.canvas.size[0]+this.size)/2), (Math.random()-0.5)*((S.canvas.size[1]+this.size)/2)] // +X is right, +Y is down
+    this.velocity = [0, 0] // Vx, Vy
   }
 
   position() {
-    const radius = (Math.random()-0.5) * this.size * S.canvas.zoom;
-    const angle = Math.random() * 2 * Math.PI;
-    this.coordinates = [(S.canvas.size[0] - this.size)/2 + Math.sin(angle)*radius, (S.canvas.size[1] - this.size)/2 + Math.cos(angle)*radius]
+    const [x1, y1] = [this.coordinates[0] + this.velocity[0], this.coordinates[1] + this.velocity[1]]
+    if (y1 > 0) {
+      this.velocity = [this.velocity[0] - Math.sin(Math.atan(x1/y1))*S.canvas.gravity, this.velocity[1] - Math.cos(Math.atan(x1/y1))*S.canvas.gravity]
+    } else {
+      this.velocity = [this.velocity[0] + Math.sin(Math.atan(x1/y1))*S.canvas.gravity, this.velocity[1] + Math.cos(Math.atan(x1/y1))*S.canvas.gravity]
+    }
+    this.size = this.mega ? 100 : 50 - Math.sqrt(S.count)/1000**S.meta.magnitude
+    this.coordinates = [x1, y1]
   }
 
   render() {
+    this.position()
     // TODO make this look like a cat
     const path = new Path2D();
-    path.arc(...this.coordinates, this.size, 0, 2 * Math.PI);
+    path.arc((S.canvas.size[0] + this.size)/2 + this.coordinates[0], (S.canvas.size[1] + this.size)/2 + + this.coordinates[1], this.size, 0, 2 * Math.PI);
     ctx.fill(path);
+    // ctx.stroke(path)
   }
 }
 
-// Handle Canvas Click
+// Handle Cat Click
+const updateCanvas = () => {
+  ctx.clearRect(0, 0, ...S.canvas.size);
+  S.canvas.cats.forEach(cat => {
+    cat.render();
+  })
+}
+
 const clickCat = () => {
-  E.counter.innerText = `cats ${++S.count}`;
-  if (S.count < 1000) {
-    scaleCanvas();
-  }
+  E.counter.innerText = `${++S.count} cats`;
   if (S.count > 999 && Math.log10(S.count) % 3 == 0) {
-    ctx.clearRect(0, 0, ...S.canvas.size);
     S.meta.magnitude = Math.log10(S.count) / 3;
-    const cat = new Cat({mega: true, coordinates: [0, 0]})
-    cat.render();
+    S.canvas.cats = [new Cat({mega: true, coordinates: [0, 0]})]
   } else {
-    const cat = new Cat()
-    cat.render();
+    S.canvas.cats.push(new Cat())
   }
+  updateCanvas()
 }
-clickCat()
 
-// setInterval(clickCat, 0)
-
-// Attach Event Listener
+// Init
 E.canvas.addEventListener('click', clickCat)
+clickCat()
+setInterval(updateCanvas, 50)
+// setInterval(clickCat, 10)
