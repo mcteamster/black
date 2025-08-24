@@ -47,6 +47,7 @@ class Cat {
   }
 
   spawn() {
+    // Spawn using radial coordinates to distribute in more of a ball
     const radius = Math.random()*(Math.max(...S.canvas.size))/2
     const angle = Math.random()*Math.PI*2
     const [x0, y0] = [Math.sin(angle)*radius, Math.cos(angle)*radius]
@@ -145,8 +146,18 @@ const clickCat = () => {
   // Trigger Sound Here
 }
 
+// Hotkeys
+const hotkey = (event) => {
+  if (event.code === 'Space' || event.key === ' ') {
+    clickCat();
+  }
+}
+document.addEventListener('keyup', hotkey, false);
+
 // Init
 S.canvas.cats = [new Cat({ coordinates: [0, 0]})] // The first Cat is statically centered
 setInterval(updateCanvas, 50) // 20 FPS
 E.canvas.addEventListener('click', clickCat)
+
+// Debug
 // setInterval(clickCat, 10)
