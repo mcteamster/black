@@ -5,18 +5,18 @@ const S = {
     cats: [],
   },
   cats: {
-    balance: 1,
-    income: 0,
-    total: 0,
-    wage: 1,
+    balance: 1, // Current Cats
+    income: 0, // Cats per Second
+    total: 0, // Cats accumulated over all time
+    wage: 1, // Cats per Pat
   },
   meta: {
     magnitude: 0,
   },
   physics: {
-    damping: 0.5,
+    damping: 0.1,
     gravity: 3,
-    noise: 0.05,
+    noise: 0.1,
     overlap: 0.4,
   },
 }
@@ -31,6 +31,13 @@ E.canvas.width = S.canvas.size[0];
 E.canvas.height = S.canvas.size[1];
 const ctx = E.canvas.getContext('2d');
 ctx.fillStyle = 'black';
+
+// Physics
+const calculateVelocity = (ma, va, mb, vb, cr) => { 
+  return (
+    (cr*(mb**2)*(vb - va) + ((ma**2)*va + (mb**2)*vb))/(ma**2 + mb**2)
+  )
+}
 
 // Cat
 class Cat {
@@ -59,13 +66,15 @@ class Cat {
   }
 
   resize() {
-    let size;
+    let size = 40 - Math.sqrt(S.canvas.cats.length)
     if (this.mega) {
-      size = 100
-    } else {
-      size = 40 - Math.sqrt(S.canvas.cats.length);
+      size = 80
     }
-    this.size = size >= 10 ? size : 10;
+    this.size = size > 4 ? size : 4;
+  }
+
+  promote() {
+    this.mega = true;
   }
 
   detectCollisions(position) {
@@ -80,30 +89,33 @@ class Cat {
   }
 
   updateVelocity(velocity) {
-    this.velocity = [velocity[0] + Math.random()*S.physics.noise, velocity[1] + Math.random()*S.physics.noise]
+    this.velocity = [velocity[0] + (Math.random()-0.5)*S.physics.noise, velocity[1] + (Math.random()-0.5)*S.physics.noise]
   }
 
   position() {
     // Resize
     this.resize();
 
-    // Desired New Position
+    // Desired New Positions
     const [x1, y1] = [this.coordinates[0] + this.velocity[0], this.coordinates[1] + this.velocity[1]]
 
     // Collision Detection
     const collisions = this.detectCollisions([x1, y1])
     collisions.forEach(cat => {
-      const [mx, my] = [S.physics.damping*(cat.velocity[0] + this.velocity[0])/2, S.physics.damping*(cat.velocity[1] + this.velocity[1])/2]
+      // Conservation of Momentum
+      let ux = calculateVelocity(this.size, this.velocity[0], cat.size, cat.velocity[0], S.physics.damping)
+      let uy = calculateVelocity(this.size, this.velocity[1], cat.size, cat.velocity[1], S.physics.damping)
+      let vx = calculateVelocity(cat.size, cat.velocity[0], this.size, this.velocity[0], S.physics.damping)
+      let vy = calculateVelocity(cat.size, cat.velocity[1], this.size, this.velocity[1], S.physics.damping)
       if (y1 > 0) {
-        this.updateVelocity([-mx + Math.sin(Math.atan(x1/y1))*S.physics.gravity, -my + Math.cos(Math.atan(x1/y1))*S.physics.gravity])
-        cat.updateVelocity([mx - Math.sin(Math.atan(x1/y1))*S.physics.gravity, my - Math.cos(Math.atan(x1/y1))*S.physics.gravity])
+        [ux, uy] = [ux - (Math.sin(Math.atan(x1/y1))*S.physics.gravity), uy - (Math.cos(Math.atan(x1/y1))*S.physics.gravity)];
+        [vx, vy] = [vx - (Math.sin(Math.atan(x1/y1))*S.physics.gravity), vy - (Math.cos(Math.atan(x1/y1))*S.physics.gravity)];
       } else if (x1 != 0 && y1 != 0) {
-        this.updateVelocity([-mx - Math.sin(Math.atan(x1/y1))*S.physics.gravity, -my - Math.cos(Math.atan(x1/y1))*S.physics.gravity])
-        cat.updateVelocity([mx + Math.sin(Math.atan(x1/y1))*S.physics.gravity, my + Math.cos(Math.atan(x1/y1))*S.physics.gravity])
-      } else {
-        this.updateVelocity([-mx, -my])
-        cat.updateVelocity([mx, my])
+        [ux, uy] = [ux + (Math.sin(Math.atan(x1/y1))*S.physics.gravity), uy + (Math.cos(Math.atan(x1/y1))*S.physics.gravity)];
+        [vx, vy] = [uy + (Math.sin(Math.atan(x1/y1))*S.physics.gravity), vy + (Math.cos(Math.atan(x1/y1))*S.physics.gravity)];
       }
+      this.updateVelocity([ux, uy])
+      cat.updateVelocity([vx, vy])
     })
     if (collisions.length == 0) {
       // Unhindered Movement
@@ -121,8 +133,8 @@ class Cat {
     // TODO make this look like a cat
     const path = new Path2D();
     path.arc((S.canvas.size[0]/2) + this.coordinates[0], (S.canvas.size[1]/2) + this.coordinates[1], this.size, 0, 2 * Math.PI);
-    ctx.fill(path);
-    // ctx.stroke(path)
+    ctx.fill(path)
+    // path.ellipse((S.canvas.size[0]/2) + this.coordinates[0], (S.canvas.size[1]/2) + this.coordinates[1], this.size/5, this.size/5, 0, 2 * Math.PI, 0)
   }
 }
 
@@ -134,30 +146,40 @@ const updateCanvas = () => {
   })
 }
 
-const clickCat = () => {
-  S.cats.total++;
-  E.counter.innerText = `${++S.cats.balance} cats`;
-  if (S.canvas.cats.length == 0 || (S.canvas.cats.length > 999 && Math.log10(S.cats.balance) % 3 == 0)) {
-    S.meta.magnitude = Math.log10(S.cats.balance) / 3;
-    S.canvas.cats = [new Cat({ coordinates: [0, 0]})]
-  } else {
-    S.canvas.cats.push(new Cat())
+const updateBalance = (cats) => {
+  if (cats > 0) {
+    S.cats.total += cats;
   }
+  S.cats.balance += cats;
+  E.counter.innerText = `${S.cats.balance} cats`;
+
+  // Re-render
+  if (S.canvas.cats.length < 1000) {
+    S.canvas.cats.push(new Cat())
+  } else {
+    S.canvas.cats.unshift();
+    S.canvas.cats.push(new Cat());
+  }
+}
+
+const patCat = () => {
+  updateBalance(S.cats.wage)
+
   // Trigger Sound Here
 }
 
 // Hotkeys
 const hotkey = (event) => {
   if (event.code === 'Space' || event.key === ' ') {
-    clickCat();
+    patCat();
   }
 }
 document.addEventListener('keyup', hotkey, false);
 
 // Init
-S.canvas.cats = [new Cat({ coordinates: [0, 0]})] // The first Cat is statically centered
+S.canvas.cats.push(new Cat({ coordinates: [0, 0] })) // The first Cat is statically centered
 setInterval(updateCanvas, 50) // 20 FPS
-E.canvas.addEventListener('click', clickCat)
+E.canvas.addEventListener('click', patCat)
 
 // Debug
-// setInterval(clickCat, 10)
+// setInterval(patCat, 10)
