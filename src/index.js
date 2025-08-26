@@ -32,13 +32,6 @@ E.canvas.height = S.canvas.size[1];
 const ctx = E.canvas.getContext('2d');
 ctx.fillStyle = 'black';
 
-// Physics
-const calculateVelocity = (ma, va, mb, vb, cr) => { 
-  return (
-    (cr*(mb**2)*(vb - va) + ((ma**2)*va + (mb**2)*vb))/(ma**2 + mb**2)
-  )
-}
-
 // Cat
 class Cat {
   constructor(props) {
@@ -56,11 +49,11 @@ class Cat {
     // Spawn using radial coordinates to distribute in more of a ball
     const radius = Math.random()*(Math.max(...S.canvas.size))/2
     const angle = Math.random()*Math.PI*2
-    const [x0, y0] = [Math.sin(angle)*radius, Math.cos(angle)*radius]
-    if (this.detectCollisions([x0, y0]).length > 0) {
+    const [x, y] = [Math.sin(angle)*radius, Math.cos(angle)*radius]
+    if (this.detectCollisions([x, y]).length > 0) {
       this.spawn()
     } else {
-      this.coordinates = [x0, y0]
+      this.coordinates = [x, y]
     }
   }
 
@@ -81,13 +74,11 @@ class Cat {
   }
 
   updateVelocity(velocity) {
+    // Add a little bit of noise to help smooth out the ball
     this.velocity = [velocity[0] + (Math.random()-0.5)*S.physics.noise, velocity[1] + (Math.random()-0.5)*S.physics.noise]
   }
 
-  position() {
-    // Resize
-    this.resize();
-
+  updatePosition() {
     // Desired New Positions
     const [x1, y1] = [this.coordinates[0] + this.velocity[0], this.coordinates[1] + this.velocity[1]]
 
@@ -118,21 +109,15 @@ class Cat {
   }
 
   render() {
-    this.position()
+    this.resize();
+    this.updatePosition()
+
     // TODO make this look like a cat
     const path = new Path2D();
     path.arc((S.canvas.size[0]/2) + this.coordinates[0], (S.canvas.size[1]/2) + this.coordinates[1], this.size, 0, 2 * Math.PI);
     ctx.fill(path)
     // path.ellipse((S.canvas.size[0]/2) + this.coordinates[0], (S.canvas.size[1]/2) + this.coordinates[1], this.size/5, this.size/5, 0, 2 * Math.PI, 0)
   }
-}
-
-// Handle Cat Click
-const updateCanvas = () => {
-  ctx.clearRect(0, 0, ...S.canvas.size);
-  S.canvas.cats.forEach(cat => {
-    cat.render();
-  })
 }
 
 const updateBalance = (cats) => {
@@ -161,24 +146,32 @@ const updateBalance = (cats) => {
   }
 }
 
+// Rendering
+S.canvas.cats.push(new Cat({ coordinates: [0, 0] })) // The first Cat is statically centered
+const updateCanvas = () => {
+  ctx.clearRect(0, 0, ...S.canvas.size);
+  S.canvas.cats.forEach(cat => {
+    cat.render();
+  })
+}
+setInterval(updateCanvas, 50) // 20 FPS
+
+// Accounting
+setInterval(updateBalance, 500, S.cats.income) // Income
 const patCat = () => {
   updateBalance(S.cats.wage)
-  // Trigger Sound Here
+  // Trigger Meow Sound Here
 }
+E.canvas.addEventListener('click', patCat) // Wage
 
 // Hotkeys
 const hotkey = (event) => {
   if (event.code === 'Space' || event.key === ' ') {
     patCat();
   }
+  // Other hotkeys go here
 }
 document.addEventListener('keyup', hotkey, false);
-
-// Init
-E.canvas.addEventListener('click', patCat)
-S.canvas.cats.push(new Cat({ coordinates: [0, 0] })) // The first Cat is statically centered
-setInterval(updateBalance, 500, S.cats.income) // Income
-setInterval(updateCanvas, 50) // 20 FPS
 
 // Debug
 // setInterval(patCat, 10)
