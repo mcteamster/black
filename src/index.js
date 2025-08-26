@@ -1,14 +1,14 @@
 // State
 const S = {
   canvas: {
-    size: [window.innerWidth*1.5, window.innerHeight*1.5],
     cats: [],
+    size: [window.innerWidth*1.5, window.innerHeight*1.5],
   },
   cats: {
     balance: 1, // Current Cats
-    income: 0, // Cats per Second
+    income: 1, // Cats per tick
     total: 0, // Cats accumulated over all time
-    wage: 50.0, // Cats per Pat
+    wage: 1.0, // Cats per click
   },
   meta: {
     magnitude: 0,
@@ -65,7 +65,8 @@ class Cat {
   }
 
   resize() {
-    this.size = 36 - Math.sqrt(S.canvas.cats.length) + S.meta.magnitude
+    const size = 36 - Math.sqrt(S.canvas.cats.length) + S.meta.magnitude
+    this.size = size > 100 ? 100 : size
   }
 
   detectCollisions(position) {
@@ -138,9 +139,11 @@ const updateBalance = (cats) => {
   // Accounting
   if (cats > 0) {
     S.cats.total += cats;
+  } else {
+    // Spending Cats
   }
   S.cats.balance += cats;
-  E.counter.innerText = `${S.cats.balance} cats`;
+  E.counter.innerText = `${S.cats.balance} cat${(S.cats.balance > 1) ? 's' : ''}`; // TODO: Prefixes and exponential notation
 
   // Adjust Magnitude
   S.meta.magnitude = Math.floor(Math.log10(S.cats.balance));
@@ -160,7 +163,6 @@ const updateBalance = (cats) => {
 
 const patCat = () => {
   updateBalance(S.cats.wage)
-
   // Trigger Sound Here
 }
 
@@ -173,9 +175,10 @@ const hotkey = (event) => {
 document.addEventListener('keyup', hotkey, false);
 
 // Init
-S.canvas.cats.push(new Cat({ coordinates: [0, 0] })) // The first Cat is statically centered
-setInterval(updateCanvas, 50) // 20 FPS
 E.canvas.addEventListener('click', patCat)
+S.canvas.cats.push(new Cat({ coordinates: [0, 0] })) // The first Cat is statically centered
+setInterval(updateBalance, 500, S.cats.income) // Income
+setInterval(updateCanvas, 50) // 20 FPS
 
 // Debug
-setInterval(patCat, 10)
+// setInterval(patCat, 10)
