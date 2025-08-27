@@ -9,7 +9,24 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.column {
   flex-direction: column;
+}
+
+.command {
+  height: 2em;
+  border: 0.1em solid black;
+  background: darkgrey;
+  padding: 0.25em;
+  margin: 0.25em;
+  cursor: pointer;
+  user-select: none;
+}
+
+.row {
+  flex-direction: row;
 }
 
 #canvas {
@@ -17,6 +34,14 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+#commands {
+  width: 100%;
+  position: fixed;
+  bottom: 20%;
+  left: 0;
+  z-index: 10;
 }
 
 #dialogue {

@@ -23,7 +23,7 @@ const S = {
 
 // Elements
 const E = {}
-const ids = ['canvas', 'counter', 'hud']
+const ids = ['base', 'canvas', 'counter', 'hud', 'mult', 'stats']
 ids.forEach(id => E[id] = document.getElementById(id));
 
 // Canvas
@@ -120,6 +120,12 @@ class Cat {
   }
 }
 
+const updateHud = () => {
+  // TODO: Prefixes and exponential notation
+  E.counter.innerText = `${S.econ.balance.toFixed(0)} cat${(S.econ.balance > 1) ? 's' : ''}`;
+  E.stats.innerText = `Base: ${S.econ.base + 1} | Mult: ${S.econ.mult}%`;
+}
+
 const updateBalance = (cats) => {
   // Accounting
   if (cats > 0) {
@@ -128,20 +134,32 @@ const updateBalance = (cats) => {
     // Spending Cats
   }
   S.econ.balance += cats;
-  E.counter.innerText = `${S.econ.balance} cat${(S.econ.balance > 1) ? 's' : ''}`; // TODO: Prefixes and exponential notation
+  updateHud();
 
   // Adjust Magnitude
   S.meta.magnitude = Math.floor(Math.log10(S.econ.balance));
   const unitPower = (S.meta.magnitude - 3) > 0 ? (S.meta.magnitude - 3) : 0; // 0.1%
 
   // Render New Cats, Remove Oldest
-  const newCats = Math.ceil(cats/(10**unitPower))
-  for (let i = 0; i < newCats; i++) {
-    if (S.canvas.cats.length < 1024) {
-      S.canvas.cats.push(new Cat())
-    } else {
-      S.canvas.cats.shift();
-      S.canvas.cats.push(new Cat());
+  const deltaCats = Math.ceil(cats/(10**unitPower))
+  if (cats > 0) {
+    for (let i = 0; i < deltaCats; i++) {
+      if (S.canvas.cats.length < 1024) {
+        S.canvas.cats.push(new Cat())
+      } else {
+        S.canvas.cats.shift();
+        S.canvas.cats.push(new Cat());
+      }
+    }
+  } else if (cats < 0) {
+    S.canvas.cats = []
+    for (let i = 0; i < Math.ceil(S.econ.balance/(10**unitPower)); i++) {
+      if (S.canvas.cats.length < 1024) {
+        S.canvas.cats.push(new Cat())
+      } else {
+        S.canvas.cats.shift();
+        S.canvas.cats.push(new Cat());
+      }
     }
   }
 }
@@ -162,12 +180,32 @@ const patCat = () => {
   updateBalance((1 + S.econ.base)*S.econ.mult/100)
   // Trigger Meow Sound Here
 }
-E.canvas.addEventListener('click', patCat) // Wage
+E.canvas.addEventListener('click', patCat)
+const upgradeBase = () => {
+  if (S.econ.balance > 100) {
+    S.econ.base++
+    updateBalance(-100)
+    updateHud()
+  }
+}
+E.base.addEventListener('click', upgradeBase)
+const upgradeMult = () => {
+  if (S.econ.balance > 1000) {
+    S.econ.mult++
+    updateBalance(-1000)
+    updateHud()
+  }
+}
+E.mult.addEventListener('click', upgradeMult)
 
 // Hotkeys
 const hotkey = (event) => {
   if (event.code === 'Space' || event.key === ' ') {
     patCat();
+  } else if ((event.code === 'KeyQ' || event.key === 'q')) {
+    upgradeBase();
+  } else if ((event.code === 'KeyW' || event.key === 'w')) {
+    upgradeMult();
   }
   // Other hotkeys go here
 }
