@@ -4,16 +4,16 @@ const S = {
     cats: [],
     size: [window.innerWidth*1.5, window.innerHeight*1.5],
   },
-  cats: {
+  econ: {
     balance: 1, // Current Cats
-    income: 1, // Cats per tick
+    base: 0, // Cats per click and tick
+    mult: 100, // Multiplier percentage
     total: 0, // Cats accumulated over all time
-    wage: 1.0, // Cats per click
   },
   meta: {
     magnitude: 0,
   },
-  physics: {
+  phys: {
     damping: 0.5,
     gravity: 3,
     noise: 0.05,
@@ -35,7 +35,7 @@ ctx.fillStyle = 'black';
 // Cat
 class Cat {
   constructor(props) {
-    this.id = S.cats.total;
+    this.id = S.econ.total;
     this.velocity = [0, 0];
     if (props?.coordinates) {
       this.coordinates = props.coordinates
@@ -66,7 +66,7 @@ class Cat {
     return S.canvas.cats.filter(cat => {
       if (cat.id != this.id) {
         const [dx, dy] = [cat.coordinates[0] - position[0], cat.coordinates[1] - position[1]]
-        if (Math.sqrt(dx**2 + dy**2) < (this.size + cat.size)*S.physics.overlap) {
+        if (Math.sqrt(dx**2 + dy**2) < (this.size + cat.size)*S.phys.overlap) {
           return true
         }
       }
@@ -75,7 +75,7 @@ class Cat {
 
   updateVelocity(velocity) {
     // Add a little bit of noise to help smooth out the ball
-    this.velocity = [velocity[0] + (Math.random()-0.5)*S.physics.noise, velocity[1] + (Math.random()-0.5)*S.physics.noise]
+    this.velocity = [velocity[0] + (Math.random()-0.5)*S.phys.noise, velocity[1] + (Math.random()-0.5)*S.phys.noise]
   }
 
   updatePosition() {
@@ -85,13 +85,13 @@ class Cat {
     // Collision Detection - This physics looks better than real conservation of momentum
     const collisions = this.detectCollisions([x1, y1])
     collisions.forEach(cat => {
-      const [mx, my] = [S.physics.damping*(cat.velocity[0] + this.velocity[0])/2, S.physics.damping*(cat.velocity[1] + this.velocity[1])/2]
+      const [mx, my] = [S.phys.damping*(cat.velocity[0] + this.velocity[0])/2, S.phys.damping*(cat.velocity[1] + this.velocity[1])/2]
       if (y1 > 0) {
-        this.updateVelocity([-mx + Math.sin(Math.atan(x1/y1))*S.physics.gravity, -my + Math.cos(Math.atan(x1/y1))*S.physics.gravity])
-        cat.updateVelocity([mx - Math.sin(Math.atan(x1/y1))*S.physics.gravity, my - Math.cos(Math.atan(x1/y1))*S.physics.gravity])
+        this.updateVelocity([-mx + Math.sin(Math.atan(x1/y1))*S.phys.gravity, -my + Math.cos(Math.atan(x1/y1))*S.phys.gravity])
+        cat.updateVelocity([mx - Math.sin(Math.atan(x1/y1))*S.phys.gravity, my - Math.cos(Math.atan(x1/y1))*S.phys.gravity])
       } else if (x1 != 0 && y1 != 0) {
-        this.updateVelocity([-mx - Math.sin(Math.atan(x1/y1))*S.physics.gravity, -my - Math.cos(Math.atan(x1/y1))*S.physics.gravity])
-        cat.updateVelocity([mx + Math.sin(Math.atan(x1/y1))*S.physics.gravity, my + Math.cos(Math.atan(x1/y1))*S.physics.gravity])
+        this.updateVelocity([-mx - Math.sin(Math.atan(x1/y1))*S.phys.gravity, -my - Math.cos(Math.atan(x1/y1))*S.phys.gravity])
+        cat.updateVelocity([mx + Math.sin(Math.atan(x1/y1))*S.phys.gravity, my + Math.cos(Math.atan(x1/y1))*S.phys.gravity])
       } else {
         this.updateVelocity([-mx, -my])
         cat.updateVelocity([mx, my])
@@ -100,9 +100,9 @@ class Cat {
     if (collisions.length == 0) {
       // Unhindered Movement
       if (y1 > 0) {
-        this.updateVelocity([this.velocity[0] - Math.sin(Math.atan(x1/y1))*S.physics.gravity, this.velocity[1] - Math.cos(Math.atan(x1/y1))*S.physics.gravity])
+        this.updateVelocity([this.velocity[0] - Math.sin(Math.atan(x1/y1))*S.phys.gravity, this.velocity[1] - Math.cos(Math.atan(x1/y1))*S.phys.gravity])
       } else if (x1 != 0 && y1 != 0) {
-        this.updateVelocity([this.velocity[0] + Math.sin(Math.atan(x1/y1))*S.physics.gravity, this.velocity[1] + Math.cos(Math.atan(x1/y1))*S.physics.gravity])
+        this.updateVelocity([this.velocity[0] + Math.sin(Math.atan(x1/y1))*S.phys.gravity, this.velocity[1] + Math.cos(Math.atan(x1/y1))*S.phys.gravity])
       }
       this.coordinates = [x1, y1]
     }
@@ -123,15 +123,15 @@ class Cat {
 const updateBalance = (cats) => {
   // Accounting
   if (cats > 0) {
-    S.cats.total += cats;
+    S.econ.total += cats;
   } else {
     // Spending Cats
   }
-  S.cats.balance += cats;
-  E.counter.innerText = `${S.cats.balance} cat${(S.cats.balance > 1) ? 's' : ''}`; // TODO: Prefixes and exponential notation
+  S.econ.balance += cats;
+  E.counter.innerText = `${S.econ.balance} cat${(S.econ.balance > 1) ? 's' : ''}`; // TODO: Prefixes and exponential notation
 
   // Adjust Magnitude
-  S.meta.magnitude = Math.floor(Math.log10(S.cats.balance));
+  S.meta.magnitude = Math.floor(Math.log10(S.econ.balance));
   const unitPower = (S.meta.magnitude - 3) > 0 ? (S.meta.magnitude - 3) : 0; // 0.1%
 
   // Render New Cats, Remove Oldest
@@ -157,9 +157,9 @@ const updateCanvas = () => {
 setInterval(updateCanvas, 50) // 20 FPS
 
 // Accounting
-setInterval(updateBalance, 500, S.cats.income) // Income
+setInterval(updateBalance, 500, S.econ.base*S.econ.mult/100) // Income
 const patCat = () => {
-  updateBalance(S.cats.wage)
+  updateBalance((1 + S.econ.base)*S.econ.mult/100)
   // Trigger Meow Sound Here
 }
 E.canvas.addEventListener('click', patCat) // Wage
