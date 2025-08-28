@@ -15,7 +15,7 @@ const S = {
   },
   phys: {
     damping: 0.3,
-    gravity: 3,
+    gravity: 2,
     noise: 0.05,
     overlap: 0.3,
   },
@@ -115,8 +115,9 @@ class Cat {
     // TODO make this look like a cat
     const path = new Path2D();
     path.arc((S.canvas.size[0]/2) + this.coordinates[0], (S.canvas.size[1]/2) + this.coordinates[1], this.size, 0, 2 * Math.PI);
+    // path.moveTo((S.canvas.size[0]/2) + this.coordinates[0] - this.size, (S.canvas.size[1]/2) + this.coordinates[1])
     ctx.fill(path)
-    // path.ellipse((S.canvas.size[0]/2) + this.coordinates[0], (S.canvas.size[1]/2) + this.coordinates[1], this.size/5, this.size/5, 0, 2 * Math.PI, 0)
+    // ctx.stroke(path)
   }
 }
 
@@ -131,8 +132,6 @@ const updateBalance = (cats) => {
   // Accounting
   if (cats > 0) {
     S.econ.total += cats;
-  } else {
-    // Spending Cats
   }
   S.econ.balance += cats;
   updateHud();
@@ -142,8 +141,8 @@ const updateBalance = (cats) => {
   const unitPower = (S.meta.magnitude - 3) > 0 ? (S.meta.magnitude - 3) : 0; // 0.1%
 
   // Render New Cats, Remove Oldest
-  const deltaCats = Math.ceil(cats/(10**unitPower))
   if (cats > 0) {
+    const deltaCats = Math.ceil(cats/(10**unitPower))
     for (let i = 0; i < deltaCats; i++) {
       if (S.canvas.cats.length < 1024) {
         S.canvas.cats.push(new Cat())
@@ -212,8 +211,6 @@ const hotkeydown = (event) => {
 }
 document.addEventListener('keyup', hotkeyup, false);
 document.addEventListener('keydown', hotkeydown, false);
-
-
 
 // Debug
 // setInterval(updateBalance, 500, S.econ.base*S.econ.mult/100) // Income

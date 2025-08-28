@@ -1,10 +1,12 @@
 body {
-  background-color: grey;
+  background-color: darkgreen;
   color: white;
   font-family: 'Courier New', Courier, monospace;
   font-size: 1.5em;
   text-align: center;
   touch-action: manipulation;
+  user-select: none;
+  cursor: pointer;
 }
 
 .centered {
@@ -25,8 +27,6 @@ body {
   margin: 0.5em;
   height: 4em;
   width: 4em;
-  cursor: pointer;
-  user-select: none;
 }
 
 .hidden {
@@ -40,7 +40,7 @@ body {
 
 #base {
   position: fixed;
-  top: 1%;
+  bottom: 1%;
   left: 1%;
 }
 
@@ -73,21 +73,20 @@ body {
 
 #dialogue {
   position: fixed;
-  top: 0;
+  top: 10%;
   left: 50%;
   transform: translate(-50%, 0);
   z-index: 10;
   width: 100%;
   padding: 0;
   margin: 0;
-  height: 20vh;
   font-size: 2em;
-  background: radial-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0) 50%);
+  /* background: radial-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0) 50%); */
 }
 
 #mult {
   position: fixed;
-  top: 1%;
+  bottom: 1%;
   right: 1%;
 }
 
