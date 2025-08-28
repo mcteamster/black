@@ -6,7 +6,7 @@ const S = {
   },
   econ: {
     balance: 1, // Current Cats
-    base: 0, // Cats per click and tick
+    base: 1, // Cats per click and tick
     mult: 100, // Multiplier percentage
     total: 0, // Cats accumulated over all time
   },
@@ -14,7 +14,7 @@ const S = {
     magnitude: 0,
   },
   phys: {
-    damping: 0.5,
+    damping: 0.3,
     gravity: 3,
     noise: 0.05,
     overlap: 0.3,
@@ -23,7 +23,7 @@ const S = {
 
 // Elements
 const E = {}
-const ids = ['base', 'canvas', 'counter', 'hud', 'mult', 'stats']
+const ids = ['base', 'canvas', 'counter', 'hud', 'mult', 'KeyQ', 'KeyW', 'KeyE', 'KeyR']
 ids.forEach(id => E[id] = document.getElementById(id));
 
 // Canvas
@@ -58,7 +58,7 @@ class Cat {
   }
 
   resize() {
-    const size = 36 - Math.sqrt(S.canvas.cats.length) + S.meta.magnitude
+    const size = 100 - 3*Math.sqrt(S.canvas.cats.length) + S.meta.magnitude
     this.size = size > 100 ? 100 : size
   }
 
@@ -123,7 +123,8 @@ class Cat {
 const updateHud = () => {
   // TODO: Prefixes and exponential notation
   E.counter.innerText = `${S.econ.balance.toFixed(0)} cat${(S.econ.balance > 1) ? 's' : ''}`;
-  E.stats.innerText = `Base: ${S.econ.base + 1} | Mult: ${S.econ.mult}%`;
+  E.base.innerHTML = `${S.econ.base} Base`;
+  E.mult.innerHTML = `${S.econ.mult}% Mult`;
 }
 
 const updateBalance = (cats) => {
@@ -175,41 +176,45 @@ const updateCanvas = () => {
 setInterval(updateCanvas, 50) // 20 FPS
 
 // Accounting
-setInterval(updateBalance, 500, S.econ.base*S.econ.mult/100) // Income
 const patCat = () => {
-  updateBalance((1 + S.econ.base)*S.econ.mult/100)
+  updateBalance(S.econ.base*S.econ.mult/100)
   // Trigger Meow Sound Here
 }
 E.canvas.addEventListener('click', patCat)
+
+// Powers
 const upgradeBase = () => {
   if (S.econ.balance > 100) {
     S.econ.base++
     updateBalance(-100)
-    updateHud()
   }
 }
-E.base.addEventListener('click', upgradeBase)
+E.KeyQ.addEventListener('click', upgradeBase)
 const upgradeMult = () => {
   if (S.econ.balance > 1000) {
-    S.econ.mult++
+    S.econ.mult += 10
     updateBalance(-1000)
-    updateHud()
   }
 }
-E.mult.addEventListener('click', upgradeMult)
+E.KeyW.addEventListener('click', upgradeMult)
 
 // Hotkeys
-const hotkey = (event) => {
+const hotkeyup = (event) => {
   if (event.code === 'Space' || event.key === ' ') {
     patCat();
-  } else if ((event.code === 'KeyQ' || event.key === 'q')) {
-    upgradeBase();
-  } else if ((event.code === 'KeyW' || event.key === 'w')) {
-    upgradeMult();
   }
   // Other hotkeys go here
 }
-document.addEventListener('keyup', hotkey, false);
+const hotkeydown = (event) => {
+  if (['KeyQ', 'KeyW', 'KeyE', 'KeyR'].includes(event.code)) {
+    document.getElementById(event.code).click()
+  }
+}
+document.addEventListener('keyup', hotkeyup, false);
+document.addEventListener('keydown', hotkeydown, false);
+
+
 
 // Debug
+// setInterval(updateBalance, 500, S.econ.base*S.econ.mult/100) // Income
 // setInterval(patCat, 10)

@@ -3,6 +3,8 @@ body {
   color: white;
   font-family: 'Courier New', Courier, monospace;
   font-size: 1.5em;
+  text-align: center;
+  touch-action: manipulation;
 }
 
 .centered {
@@ -17,16 +19,29 @@ body {
 
 .command {
   height: 2em;
-  border: 0.1em solid black;
-  background: darkgrey;
-  padding: 0.25em;
-  margin: 0.25em;
+  border-radius: 1em;
+  background: #111;
+  padding: 0.5em;
+  margin: 0.5em;
+  height: 4em;
+  width: 4em;
   cursor: pointer;
   user-select: none;
 }
 
+.hidden {
+  display: none;
+  visibility: hidden;
+}
+
 .row {
   flex-direction: row;
+}
+
+#base {
+  position: fixed;
+  top: 1%;
+  left: 1%;
 }
 
 #canvas {
@@ -39,29 +54,45 @@ body {
 #commands {
   width: 100%;
   position: fixed;
-  bottom: 20%;
+  bottom: 0;
   left: 0;
   z-index: 10;
-}
-
-#dialogue {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translate(-50%, 0);
-  z-index: 10;
-  padding: 0;
-  margin: 0;
-  height: 20vh;
-  width: 100%;
-  font-size: 2em;
   background: linear-gradient(to top, rgba(0,0,0,0.5), rgba(0,0,0,0));
 }
 
-#hud {
+#counter {
   position: fixed;
   top: 0;
   left: 50%;
   transform: translate(-50%, 50%);
   z-index: 10;
+  width: 100%;
+  font-size: 1.5em;
+  text-align: center;
+}
+
+#dialogue {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, 0);
+  z-index: 10;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  height: 20vh;
+  font-size: 2em;
+  background: radial-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0) 50%);
+}
+
+#mult {
+  position: fixed;
+  top: 1%;
+  right: 1%;
+}
+
+@media only screen and (orientation: portrait) and (max-device-width: 568px) {
+  body {
+    font-size: 2em;
+  }
 }
