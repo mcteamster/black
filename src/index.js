@@ -6,7 +6,8 @@ const S = {
   },
   econ: {
     balance: 1, // Current Cats
-    base: 1, // Cats per click and tick
+    base: 1, // Cats per click
+    interest: 0, // Growth per tick
     mult: 100, // Multiplier percentage
     total: 0, // Cats accumulated over all time
   },
@@ -16,15 +17,24 @@ const S = {
   phys: {
     damping: 0.3,
     gravity: 2,
-    noise: 0.05,
+    noise: 0.1,
     overlap: 0.3,
   },
+  skills: {
+    Q: null,
+    W: null,
+    E: null,
+    R: null,
+  }
 }
 
 // Elements
 const E = {}
-const ids = ['base', 'canvas', 'counter', 'hud', 'mult', 'KeyQ', 'KeyW', 'KeyE', 'KeyR']
+const ids = ['canvas', 'counter', 'hud', 'stats', 'KeyQ', 'KeyW', 'KeyE', 'KeyR']
 ids.forEach(id => E[id] = document.getElementById(id));
+
+// Audio
+const meow = new Audio()
 
 // Canvas
 E.canvas.width = S.canvas.size[0];
@@ -121,11 +131,105 @@ class Cat {
   }
 }
 
+// Skills
+class Skill {
+  constructor(props) {
+    this.cost = props.cost
+    this.effect = props.effect
+    this.icon = props.icon
+    this.label = props.label
+    this.level = 0
+  }
+
+  assign(key) {
+    if (['Q', 'W', 'E', 'R'].includes(key)) {
+      E[`Key${key}`].addEventListener('click', (event) => { this.use(); event.stopPropagation() })
+      E[`Key${key}`].title = this.label
+    }
+  }
+
+  upgrade() {
+    if (S.econ.balance > this.cost) {
+      this.level++
+      updateBalance(-this.cost)
+      return true
+    }
+  }
+}
+
+// #1 - Hand: +1 Base
+class HandSkill extends Skill {
+  constructor(props) {
+    super({
+      cost: 100,
+      effect: '+1',
+      icon: '✋',
+      label: 'Hand',
+    })
+    this.assign(props.key)
+  }
+
+  use() {
+    if (this.upgrade()) {
+      this.cost = 100 + this.level
+      S.econ.base++
+      updateBalance(0)
+    }
+  }
+}
+
+// #2 - Mult: +10% Mult
+class MultSkill extends Skill {
+  constructor(props) {
+    super({
+      cost: 1000,
+      effect: '+0.1x',
+      icon: '❎',
+      label: 'Mult',
+    })
+    this.assign(props.key)
+  }
+
+  use() {
+    if (this.upgrade()) {
+      this.cost = 1000 + 100*this.level
+      S.econ.mult += 10
+      updateBalance(0)
+    }
+  }
+}
+
+// #3 - Bank: +0.01% Interest
+class BankSkill extends Skill {
+  constructor(props) {
+    super({
+      cost: 10000,
+      effect: '+0.01%',
+      icon: '🏦',
+      label: 'Bank',
+    })
+    this.assign(props.key)
+  }
+
+  use() {
+    if (this.upgrade()) {
+      this.cost = 10000*this.level
+      S.econ.interest += 0.01
+      updateBalance(0)
+    }
+  }
+}
+
+// Updates
 const updateHud = () => {
   // TODO: Prefixes and exponential notation
   E.counter.innerText = `${S.econ.balance.toFixed(0)} cat${(S.econ.balance > 1) ? 's' : ''}`;
-  E.base.innerHTML = `${S.econ.base} Base`;
-  E.mult.innerHTML = `${S.econ.mult}% Mult`;
+  E.stats.innerHTML = `${S.econ.base} Base<br>${(S.econ.mult/100).toFixed(1)}x Mult<br>${(S.econ.interest)}% Interest`;
+  ['Q', 'W', 'E', 'R'].forEach(key => {
+    if (S.skills[key]) {
+      E[`Key${key}`].innerHTML = `${S.skills[key].icon}<br>${S.skills[key].effect}<br>¢${S.skills[key].cost}`
+    }
+  })
 }
 
 const updateBalance = (cats) => {
@@ -137,13 +241,15 @@ const updateBalance = (cats) => {
   updateHud();
 
   // Adjust Magnitude
-  S.meta.magnitude = Math.floor(Math.log10(S.econ.balance));
+  if (Math.floor(Math.log10(S.econ.balance)) > S.meta.magnitude) {
+    S.meta.magnitude = Math.floor(Math.log10(S.econ.balance))
+  }
   const unitPower = (S.meta.magnitude - 3) > 0 ? (S.meta.magnitude - 3) : 0; // 0.1%
 
   // Render New Cats, Remove Oldest
   if (cats > 0) {
-    const deltaCats = Math.ceil(cats/(10**unitPower))
-    for (let i = 0; i < deltaCats; i++) {
+    const newCats = cats/10**unitPower
+    for (let i = 0; i < newCats; i++) {
       if (S.canvas.cats.length < 1024) {
         S.canvas.cats.push(new Cat())
       } else {
@@ -152,14 +258,16 @@ const updateBalance = (cats) => {
       }
     }
   } else if (cats < 0) {
-    S.canvas.cats = []
-    for (let i = 0; i < Math.ceil(S.econ.balance/(10**unitPower)); i++) {
-      if (S.canvas.cats.length < 1024) {
-        S.canvas.cats.push(new Cat())
-      } else {
+    const oldCats = S.canvas.cats.length - (S.econ.balance/10**unitPower > 1024 ? 1024 : S.econ.balance/10**unitPower)
+    for (let i = 0; i < oldCats; i++) {
+      if (S.canvas.cats.length > 1) {
         S.canvas.cats.shift();
-        S.canvas.cats.push(new Cat());
       }
+    }
+    if (oldCats == 0) {
+      S.canvas.cats.forEach(cat => {
+        cat.updateVelocity([cat.velocity[0] + cat.size*(Math.random() - 0.5), cat.velocity[1] + cat.size*(Math.random() - 0.5)])
+      })
     }
   }
 }
@@ -174,28 +282,20 @@ const updateCanvas = () => {
 }
 setInterval(updateCanvas, 50) // 20 FPS
 
-// Accounting
+// Abilities
 const patCat = () => {
   updateBalance(S.econ.base*S.econ.mult/100)
   // Trigger Meow Sound Here
 }
 E.canvas.addEventListener('click', patCat)
-
-// Powers
-const upgradeBase = () => {
-  if (S.econ.balance > 100) {
-    S.econ.base++
-    updateBalance(-100)
+setInterval(() => {
+  if (S.econ.interest > 0) {
+    updateBalance(Math.floor(S.econ.balance * S.econ.interest/100)) // Interest Ticks
   }
-}
-E.KeyQ.addEventListener('click', upgradeBase)
-const upgradeMult = () => {
-  if (S.econ.balance > 1000) {
-    S.econ.mult += 10
-    updateBalance(-1000)
-  }
-}
-E.KeyW.addEventListener('click', upgradeMult)
+}, 1000)
+S.skills.Q = new HandSkill({ key: 'Q'})
+S.skills.W = new MultSkill({ key: 'W'})
+S.skills.E = new BankSkill({ key: 'E'})
 
 // Hotkeys
 const hotkeyup = (event) => {
@@ -213,5 +313,5 @@ document.addEventListener('keyup', hotkeyup, false);
 document.addEventListener('keydown', hotkeydown, false);
 
 // Debug
-// setInterval(updateBalance, 500, S.econ.base*S.econ.mult/100) // Income
+// setInterval(updateBalance, 500, S.econ.base*S.econ.mult/100) // Income Ticks
 // setInterval(patCat, 10)

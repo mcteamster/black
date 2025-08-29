@@ -27,6 +27,7 @@ body {
   margin: 0.5em;
   height: 4em;
   width: 4em;
+  font-weight: bold;
 }
 
 .hidden {
@@ -36,12 +37,6 @@ body {
 
 .row {
   flex-direction: row;
-}
-
-#base {
-  position: fixed;
-  bottom: 1%;
-  left: 1%;
 }
 
 #canvas {
@@ -81,13 +76,14 @@ body {
   padding: 0;
   margin: 0;
   font-size: 2em;
-  /* background: radial-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0) 50%); */
+  background: radial-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0) 50%);
 }
 
-#mult {
+#stats {
   position: fixed;
-  bottom: 1%;
-  right: 1%;
+  top: 1%;
+  left: 1%;
+  text-align: left;
 }
 
 @media only screen and (orientation: portrait) and (max-device-width: 568px) {
