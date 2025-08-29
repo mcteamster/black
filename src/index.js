@@ -1,4 +1,4 @@
-// State
+/* ========= Gamestate ========= */
 const S = {
   canvas: {
     cats: [],
@@ -16,8 +16,8 @@ const S = {
   },
   phys: {
     damping: 0.3,
-    gravity: 2,
-    noise: 0.1,
+    gravity: 3,
+    noise: 0.2,
     overlap: 0.3,
   },
   skills: {
@@ -28,6 +28,7 @@ const S = {
   }
 }
 
+/* ========= Page Setup ========= */
 // Elements
 const E = {}
 const ids = ['canvas', 'counter', 'hud', 'stats', 'KeyQ', 'KeyW', 'KeyE', 'KeyR']
@@ -42,7 +43,58 @@ E.canvas.height = S.canvas.size[1];
 const ctx = E.canvas.getContext('2d');
 ctx.fillStyle = 'black';
 
-// Cat
+const updateHud = () => {
+  // TODO: Prefixes and exponential notation
+  E.counter.innerText = `${S.econ.balance.toFixed(0)} cat${(S.econ.balance > 1) ? 's' : ''}`;
+  E.stats.innerHTML = `${S.econ.base} Base<br>${(S.econ.mult/100).toFixed(1)}x Mult<br>${(S.econ.interest)}% Interest`;
+  ['Q', 'W', 'E', 'R'].forEach(key => {
+    if (S.skills[key]) {
+      E[`Key${key}`].innerHTML = `${S.skills[key].icon}<br>${S.skills[key].effect}<br>¢${S.skills[key].cost}`
+    }
+  })
+}
+
+const updateBalance = (cats) => {
+  // Accounting
+  if (cats > 0) {
+    S.econ.total += cats;
+  }
+  S.econ.balance += cats;
+  updateHud();
+
+  // Adjust Magnitude
+  if (Math.floor(Math.log10(S.econ.balance)) > S.meta.magnitude) {
+    S.meta.magnitude = Math.floor(Math.log10(S.econ.balance))
+  }
+  const unitPower = (S.meta.magnitude - 3) > 0 ? (S.meta.magnitude - 3) : 0; // 0.1%
+
+  // Render New Cats, Remove Oldest
+  if (cats > 0) {
+    const newCats = cats/10**unitPower
+    for (let i = 0; i < newCats; i++) {
+      if (S.canvas.cats.length < 1024) {
+        S.canvas.cats.push(new Cat())
+      } else {
+        S.canvas.cats.shift();
+        S.canvas.cats.push(new Cat());
+      }
+    }
+  } else if (cats < 0) {
+    const oldCats = S.canvas.cats.length - (S.econ.balance/10**unitPower > 1024 ? 1024 : S.econ.balance/10**unitPower)
+    for (let i = 0; i < oldCats; i++) {
+      if (S.canvas.cats.length > 1) {
+        S.canvas.cats.shift();
+      }
+    }
+    if (oldCats == 0) {
+      S.canvas.cats.forEach(cat => {
+        cat.updateVelocity([cat.velocity[0] + cat.size*(Math.random() - 0.5), cat.velocity[1] + cat.size*(Math.random() - 0.5)])
+      })
+    }
+  }
+}
+
+/* ========= Physics ========= */
 class Cat {
   constructor(props) {
     this.id = S.econ.total;
@@ -123,7 +175,7 @@ class Cat {
     this.updatePosition()
 
     // TODO make this look like a cat
-    const path = new Path2D();
+    const path = new Path2D()
     path.arc((S.canvas.size[0]/2) + this.coordinates[0], (S.canvas.size[1]/2) + this.coordinates[1], this.size, 0, 2 * Math.PI);
     // path.moveTo((S.canvas.size[0]/2) + this.coordinates[0] - this.size, (S.canvas.size[1]/2) + this.coordinates[1])
     ctx.fill(path)
@@ -131,7 +183,7 @@ class Cat {
   }
 }
 
-// Skills
+/* ========= Skills ========= */
 class Skill {
   constructor(props) {
     this.cost = props.cost
@@ -220,58 +272,8 @@ class BankSkill extends Skill {
   }
 }
 
-// Updates
-const updateHud = () => {
-  // TODO: Prefixes and exponential notation
-  E.counter.innerText = `${S.econ.balance.toFixed(0)} cat${(S.econ.balance > 1) ? 's' : ''}`;
-  E.stats.innerHTML = `${S.econ.base} Base<br>${(S.econ.mult/100).toFixed(1)}x Mult<br>${(S.econ.interest)}% Interest`;
-  ['Q', 'W', 'E', 'R'].forEach(key => {
-    if (S.skills[key]) {
-      E[`Key${key}`].innerHTML = `${S.skills[key].icon}<br>${S.skills[key].effect}<br>¢${S.skills[key].cost}`
-    }
-  })
-}
 
-const updateBalance = (cats) => {
-  // Accounting
-  if (cats > 0) {
-    S.econ.total += cats;
-  }
-  S.econ.balance += cats;
-  updateHud();
-
-  // Adjust Magnitude
-  if (Math.floor(Math.log10(S.econ.balance)) > S.meta.magnitude) {
-    S.meta.magnitude = Math.floor(Math.log10(S.econ.balance))
-  }
-  const unitPower = (S.meta.magnitude - 3) > 0 ? (S.meta.magnitude - 3) : 0; // 0.1%
-
-  // Render New Cats, Remove Oldest
-  if (cats > 0) {
-    const newCats = cats/10**unitPower
-    for (let i = 0; i < newCats; i++) {
-      if (S.canvas.cats.length < 1024) {
-        S.canvas.cats.push(new Cat())
-      } else {
-        S.canvas.cats.shift();
-        S.canvas.cats.push(new Cat());
-      }
-    }
-  } else if (cats < 0) {
-    const oldCats = S.canvas.cats.length - (S.econ.balance/10**unitPower > 1024 ? 1024 : S.econ.balance/10**unitPower)
-    for (let i = 0; i < oldCats; i++) {
-      if (S.canvas.cats.length > 1) {
-        S.canvas.cats.shift();
-      }
-    }
-    if (oldCats == 0) {
-      S.canvas.cats.forEach(cat => {
-        cat.updateVelocity([cat.velocity[0] + cat.size*(Math.random() - 0.5), cat.velocity[1] + cat.size*(Math.random() - 0.5)])
-      })
-    }
-  }
-}
-
+/* ========= Services ========= */
 // Rendering
 S.canvas.cats.push(new Cat({ coordinates: [0, 0] })) // The first Cat is statically centered
 const updateCanvas = () => {
@@ -282,7 +284,21 @@ const updateCanvas = () => {
 }
 setInterval(updateCanvas, 50) // 20 FPS
 
-// Abilities
+// Hotkeys
+const hotkeyup = (event) => {
+  if (event.code === 'Space' || event.key === ' ') {
+    patCat();
+  }
+}
+document.addEventListener('keyup', hotkeyup, false);
+const hotkeydown = (event) => {
+  if (['KeyQ', 'KeyW', 'KeyE', 'KeyR'].includes(event.code)) {
+    document.getElementById(event.code).click()
+  }
+}
+document.addEventListener('keydown', hotkeydown, false);
+
+// Economy
 const patCat = () => {
   updateBalance(S.econ.base*S.econ.mult/100)
   // Trigger Meow Sound Here
@@ -293,25 +309,11 @@ setInterval(() => {
     updateBalance(Math.floor(S.econ.balance * S.econ.interest/100)) // Interest Ticks
   }
 }, 1000)
+
+// Skills
 S.skills.Q = new HandSkill({ key: 'Q'})
 S.skills.W = new MultSkill({ key: 'W'})
 S.skills.E = new BankSkill({ key: 'E'})
 
-// Hotkeys
-const hotkeyup = (event) => {
-  if (event.code === 'Space' || event.key === ' ') {
-    patCat();
-  }
-  // Other hotkeys go here
-}
-const hotkeydown = (event) => {
-  if (['KeyQ', 'KeyW', 'KeyE', 'KeyR'].includes(event.code)) {
-    document.getElementById(event.code).click()
-  }
-}
-document.addEventListener('keyup', hotkeyup, false);
-document.addEventListener('keydown', hotkeydown, false);
-
-// Debug
-// setInterval(updateBalance, 500, S.econ.base*S.econ.mult/100) // Income Ticks
+/* ========= Debug ========= */
 // setInterval(patCat, 10)
