@@ -16,7 +16,7 @@ const S = {
   },
   phys: {
     damping: 0.3,
-    gravity: 3,
+    gravity: 5,
     noise: 0.2,
     overlap: 0.3,
   },
@@ -34,8 +34,9 @@ const E = {}
 const ids = ['canvas', 'counter', 'hud', 'stats', 'KeyQ', 'KeyW', 'KeyE', 'KeyR']
 ids.forEach(id => E[id] = document.getElementById(id));
 
-// Audio
+// Constants
 const meow = new Audio()
+const blackCat = '&#x1F408;&#x200D;&#x2B1B;' // 🐈‍⬛
 
 // Canvas
 E.canvas.width = S.canvas.size[0];
@@ -45,11 +46,11 @@ ctx.fillStyle = 'black';
 
 const updateHud = () => {
   // TODO: Prefixes and exponential notation
-  E.counter.innerText = `${S.econ.balance.toFixed(0)} cat${(S.econ.balance > 1) ? 's' : ''}`;
+  E.counter.innerHTML = `${S.econ.balance.toFixed(0)} cat${(S.econ.balance > 1) ? 's' : ''} ${blackCat}`;
   E.stats.innerHTML = `${S.econ.base} Base<br>${(S.econ.mult/100).toFixed(1)}x Mult<br>${(S.econ.interest)}% Interest`;
   ['Q', 'W', 'E', 'R'].forEach(key => {
     if (S.skills[key]) {
-      E[`Key${key}`].innerHTML = `${S.skills[key].icon}<br>${S.skills[key].effect}<br>¢${S.skills[key].cost}`
+      E[`Key${key}`].innerHTML = `${S.skills[key].icon}<br>${S.skills[key].effect}<br>${S.skills[key].cost}${blackCat}`
     }
   })
 }
@@ -213,9 +214,9 @@ class Skill {
 class HandSkill extends Skill {
   constructor(props) {
     super({
-      cost: 100,
+      cost: 101,
       effect: '+1',
-      icon: '✋',
+      icon: '&#x270B;',
       label: 'Hand',
     })
     this.assign(props.key)
@@ -223,7 +224,7 @@ class HandSkill extends Skill {
 
   use() {
     if (this.upgrade()) {
-      this.cost = 100 + this.level
+      this.cost = 101 + this.level
       S.econ.base++
       updateBalance(0)
     }
@@ -236,7 +237,7 @@ class MultSkill extends Skill {
     super({
       cost: 1000,
       effect: '+0.1x',
-      icon: '❎',
+      icon: '&#x274E;',
       label: 'Mult',
     })
     this.assign(props.key)
@@ -257,7 +258,7 @@ class BankSkill extends Skill {
     super({
       cost: 10000,
       effect: '+0.01%',
-      icon: '🏦',
+      icon: '&#x1F3E6;',
       label: 'Bank',
     })
     this.assign(props.key)
@@ -302,6 +303,8 @@ document.addEventListener('keydown', hotkeydown, false);
 const patCat = () => {
   updateBalance(S.econ.base*S.econ.mult/100)
   // Trigger Meow Sound Here
+  meow.load()
+  meow.play()
 }
 E.canvas.addEventListener('click', patCat)
 setInterval(() => {
