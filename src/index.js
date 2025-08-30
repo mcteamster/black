@@ -298,7 +298,7 @@ class HandSkill extends Skill {
 
   use() {
     if (this.buy()) {
-      this.cost = 100 + 25 * this.level // Linear
+      this.cost = 100 + 10 * this.level // Linear
       S.econ.base++
       updateBalance(0)
     }
@@ -376,8 +376,8 @@ document.addEventListener('keydown', hotkeydown, false);
 const patCat = () => {
   updateBalance(S.econ.base * S.econ.mult / 100)
   // Trigger Meow Sound Here
-  const meow = new Audio('./meow.mp3')
-  meow.play()
+  // const meow = new Audio('./meow.mp3')
+  // meow.play()
 }
 E.canvas.addEventListener('click', patCat)
 const interestInterval = setInterval(() => {
