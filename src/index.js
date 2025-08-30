@@ -40,7 +40,6 @@ ids.forEach(id => E[id] = document.getElementById(id));
 const body = document.body;
 
 // Constants
-const meow = new Audio()
 const blackCat = '&#x1F408;&#x200D;&#x2B1B;' // 🐈‍⬛
 
 // Canvas
@@ -377,7 +376,7 @@ document.addEventListener('keydown', hotkeydown, false);
 const patCat = () => {
   updateBalance(S.econ.base * S.econ.mult / 100)
   // Trigger Meow Sound Here
-  meow.load()
+  const meow = new Audio('./meow.mp3')
   meow.play()
 }
 E.canvas.addEventListener('click', patCat)
