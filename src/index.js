@@ -298,7 +298,7 @@ class HandSkill extends Skill {
 
   use() {
     if (this.buy()) {
-      this.cost = 100 + 100 * this.level // Linear
+      this.cost = 100 + 25 * this.level // Linear
       S.econ.base++
       updateBalance(0)
     }
@@ -319,7 +319,7 @@ class MoreSkill extends Skill {
 
   use() {
     if (this.buy()) {
-      this.cost = 10 * ((10 + this.level) ** 2) // Parabolic
+      this.cost = 1000 + 10*((this.level) ** 2) // Parabolic
       S.econ.mult += 10
       updateBalance(0)
     }
