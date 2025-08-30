@@ -252,7 +252,7 @@ class Skill {
   assign() {
     if (['Q', 'W', 'E', 'R'].includes(this.key)) {
       E[`Key${this.key}`].addEventListener('click', (event) => { this.use(); event.stopPropagation() })
-      E[`Key${this.key}`].title = this.label
+      E[`Key${this.key}`].title = `(${this.key}) ${this.label}`
     }
   }
 
@@ -387,17 +387,17 @@ class Narrator {
     // TODO: Adjust Lines based on playthrough metadata
     this.lines = [
       { milestone: 0, line: 'please DO NOT the cat' },
-      { milestone: 13, line: 'AHHH! What are you doing?' },
+      { milestone: 12, line: 'AHHH! What are you doing?' },
       { milestone: 30, line: "Can you STOP?" },
       { milestone: 50, line: "PLEASE" },
       { milestone: 65, line: "Okay." },
       { milestone: 80, line: "You really are doing this" },
-      { milestone: 100, line: "..." },
-      { milestone: 200, line: "Look." },
-      { milestone: 400, line: "I can't say I didn't warn you" },
-      { milestone: 600, line: "But if you're going to commit..." },
-      { milestone: 800, line: "You should do it properly." },
-      { milestone: 1000, line: "The better you treat them, the better they'll treat you" },
+      { milestone: 100, line: "Look..." },
+      { milestone: 200, line: "I can't say I didn't warn you" },
+      { milestone: 400, line: "But if you're going to commit..." },
+      { milestone: 600, line: "You should do it properly." },
+      { milestone: 800, line: "The better you treat them, the better they'll treat you" },
+      { milestone: 1000, line: "Give and you shall receive" },
       { milestone: 1500, line: "It's just the way the universe works" },
       { milestone: 2000, line: "Or at least that's what I was told..." },
       { milestone: 4000, line: "We sure have a lot of cats now. Have you ever wondered where they come from?" },
@@ -421,7 +421,7 @@ class Narrator {
     } else if (S.skills.Q.level == 1) {
       this.currentLine = "OH NO. THIS IS WORSE"
     } else if (S.skills.W.level == 0 && S.econ.balance > S.skills.W.cost) {
-      this.currentLine = `If you're nice they'll go off and find ${S.skills.W.label} ${S.skills.W.icon}`
+      this.currentLine = `If you're nice to them they'll go off and find ${S.skills.W.label} ${S.skills.W.icon}`
     } else if (S.skills.E.level == 0 && S.econ.balance > S.skills.E.cost) {
       this.currentLine = `Oh! They want to have kittens. Maybe we should give them space to ${S.skills.E.label} ${S.skills.E.icon}`
     } else if (S.econ.balance >= this.lines[this.cursor + 1].milestone) {
