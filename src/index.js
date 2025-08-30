@@ -151,6 +151,8 @@ const updateBalance = (cats) => {
 class Cat {
   constructor(props) {
     this.id = S.econ.total;
+    this.orientation = 0;
+    this.rotation = 0;
     this.velocity = [0, 0];
     if (props?.coordinates) {
       this.coordinates = props.coordinates
@@ -191,9 +193,13 @@ class Cat {
   updateVelocity(velocity) {
     // Add a little bit of noise to help smooth out the ball
     this.velocity = [velocity[0] + (Math.random() - 0.5) * S.phys.noise, velocity[1] + (Math.random() - 0.5) * S.phys.noise]
+    this.rotation += 0.01*(Math.random() - 0.5);
   }
 
   updatePosition() {
+    // Angle
+    this.orientation += this.rotation
+
     // Desired New Positions
     const [x1, y1] = [this.coordinates[0] + this.velocity[0], this.coordinates[1] + this.velocity[1]]
 
@@ -226,13 +232,20 @@ class Cat {
   render() {
     this.resize();
     this.updatePosition()
-
-    // TODO make this look like a cat
+    const offsetX = (S.canvas.size[0] / 2) + this.coordinates[0]
+    const offsetY =  (S.canvas.size[1] / 2) + this.coordinates[1]
+    const detail = 1.5 - 0.001*S.canvas.cats.length
     const path = new Path2D()
-    path.arc((S.canvas.size[0] / 2) + this.coordinates[0], (S.canvas.size[1] / 2) + this.coordinates[1], this.size, 0, 2 * Math.PI);
-    // path.moveTo((S.canvas.size[0]/2) + this.coordinates[0] - this.size, (S.canvas.size[1]/2) + this.coordinates[1])
+    path.arc(offsetX, offsetY, this.size, 0, 2 * Math.PI); // Head
+    if (detail > 1) {
+      path.moveTo(offsetX - this.size*Math.sin(this.orientation + Math.PI*(90/180)), offsetY - this.size*Math.cos(this.orientation + Math.PI*(90/180))) // Left Ear
+      path.lineTo(offsetX - detail*this.size*Math.sin(this.orientation + Math.PI*(30/180)), offsetY - detail*this.size*Math.cos(this.orientation + Math.PI*(30/180))) 
+      path.lineTo(offsetX - this.size*Math.sin(this.orientation + Math.PI*(10/180)), offsetY - this.size*Math.cos(this.orientation + Math.PI*(10/180)))
+      path.moveTo(offsetX - this.size*Math.sin(this.orientation - Math.PI*(10/180)), offsetY - this.size*Math.cos(this.orientation - Math.PI*(10/180))) // Right Ear
+      path.lineTo(offsetX - detail*this.size*Math.sin(this.orientation - Math.PI*(30/180)), offsetY - detail*this.size*Math.cos(this.orientation - Math.PI*(30/180))) 
+      path.lineTo(offsetX - this.size*Math.sin(this.orientation - Math.PI*(90/180)), offsetY - this.size*Math.cos(this.orientation - Math.PI*(90/180)))
+    }
     ctx.fill(path)
-    // ctx.stroke(path)
   }
 }
 
