@@ -2,7 +2,11 @@
 const S = {
   canvas: {
     cats: [],
-    size: [window.innerWidth*1.5, window.innerHeight*1.5],
+    size: [window.innerWidth * 1.5, window.innerHeight * 1.5],
+  },
+  dialogue: {
+    milestone: 0,
+    narrator: null,
   },
   econ: {
     balance: 1, // Current Cats
@@ -31,7 +35,7 @@ const S = {
 /* ========= Page Setup ========= */
 // Elements
 const E = {}
-const ids = ['canvas', 'counter', 'hud', 'stats', 'KeyQ', 'KeyW', 'KeyE', 'KeyR']
+const ids = ['canvas', 'counter', 'dialogue', 'stats', 'KeyQ', 'KeyW', 'KeyE', 'KeyR']
 ids.forEach(id => E[id] = document.getElementById(id));
 const body = document.body;
 
@@ -49,24 +53,25 @@ const notation = (x, short) => {
   let value;
   let suffix = short ? '' : ' cats';
   if (x == 1) {
+    value = 1
     suffix = short ? '' : ' cat'
-  } else if (x > 1 && x < 10**6) {
-    value = x
-  } else if (x >= 10**6 && x < 10**21) {
-    if (x >= 10**18) {
-      value = (x/10**18).toFixed(2)
+  } else if (x > 1 && x < 10 ** 6) {
+    value = x.toFixed(0)
+  } else if (x >= 10 ** 6 && x < 10 ** 21) {
+    if (x >= 10 ** 18) {
+      value = (x / 10 ** 18).toFixed(2)
       suffix = short ? 'E' : ' Exacats'
-    } else if (x >= 10**15) {
-      value = (x/10**15).toFixed(2)
+    } else if (x >= 10 ** 15) {
+      value = (x / 10 ** 15).toFixed(2)
       suffix = short ? 'P' : ' Petacats'
-    } else if (x >= 10**12) {
-      value = (x/10**12).toFixed(2)
+    } else if (x >= 10 ** 12) {
+      value = (x / 10 ** 12).toFixed(2)
       suffix = short ? 'T' : ' Teracats'
-    } else if (x >= 10**9) {
-      value = (x/10**9).toFixed(2)
+    } else if (x >= 10 ** 9) {
+      value = (x / 10 ** 9).toFixed(2)
       suffix = short ? 'G' : ' Gigacats'
     } else {
-      value = (x/10**6).toFixed(2)
+      value = (x / 10 ** 6).toFixed(2)
       suffix = short ? 'M' : ' Megacats'
     }
   } else {
@@ -76,22 +81,26 @@ const notation = (x, short) => {
 }
 
 const updateHud = () => {
-  // TODO: Prefixes and exponential notation
   E.counter.innerHTML = `${notation(S.econ.balance)} ${blackCat}`;
-  E.stats.innerHTML = `${S.econ.base} Base<br>${(S.econ.mult/100).toFixed(1)}x Mult<br>${(S.econ.interest.toFixed(2))}% Interest`;
+  E.stats.innerHTML = `${S.econ.base > 1 ? S.econ.base+' Base<br>' : ''}${S.econ.mult > 100 ? (S.econ.mult / 100).toFixed(1)+' x Mult<br>' : ''}${S.econ.interest > 0 ? (S.econ.interest.toFixed(2))+' % Interest' : ''}`;
   ['Q', 'W', 'E', 'R'].forEach(key => {
     if (S.skills[key]) {
-      E[`Key${key}`].innerHTML = `${S.skills[key].icon}<br>${S.skills[key].effect}<br>${notation(S.skills[key].cost, true)}${blackCat}`
+      const element = E[`Key${key}`]
+      if (S.econ.balance > S.skills[key].cost) {
+        S.skills[key].enable()
+      }
+      element.innerHTML = `${S.skills[key].icon}<br>${S.skills[key].effect}<br>${notation(S.skills[key].cost, true)}${blackCat}`
     }
   })
+  S.dialogue.narrator.nextLine();
 }
 
 const updateMagnitude = () => {
   // Background Colour
   const [hue, saturation, lightness] = [
-    Math.min(140 + 5*Math.log10(S.econ.balance), 240),
+    Math.min(140 + 5 * Math.log10(S.econ.balance), 240),
     Math.max(50 - Math.log10(S.econ.balance), 0),
-    Math.max(50 - 2*Math.log10(S.econ.balance), 10)
+    Math.max(50 - 2 * Math.log10(S.econ.balance), 10)
   ]
   body.style.backgroundColor = `hsl(${hue},${saturation}%,${lightness}%)`
 
@@ -114,7 +123,7 @@ const updateBalance = (cats) => {
 
   // Render New Cats, Remove Oldest
   if (cats > 0) {
-    const newCats = cats/10**unitPower
+    const newCats = cats / 10 ** unitPower
     for (let i = 0; i < newCats; i++) {
       if (S.canvas.cats.length < 1024) {
         S.canvas.cats.push(new Cat())
@@ -124,7 +133,7 @@ const updateBalance = (cats) => {
       }
     }
   } else if (cats < 0) {
-    const oldCats = S.canvas.cats.length - (S.econ.balance/10**unitPower > 1024 ? 1024 : S.econ.balance/10**unitPower)
+    const oldCats = S.canvas.cats.length - (S.econ.balance / 10 ** unitPower > 1024 ? 1024 : S.econ.balance / 10 ** unitPower)
     for (let i = 0; i < oldCats; i++) {
       if (S.canvas.cats.length > 1) {
         S.canvas.cats.shift();
@@ -132,7 +141,7 @@ const updateBalance = (cats) => {
     }
     if (oldCats == 0) {
       S.canvas.cats.forEach(cat => {
-        cat.updateVelocity([cat.velocity[0] + cat.size*(Math.random() - 0.5), cat.velocity[1] + cat.size*(Math.random() - 0.5)])
+        cat.updateVelocity([cat.velocity[0] + cat.size * (Math.random() - 0.5), cat.velocity[1] + cat.size * (Math.random() - 0.5)])
       })
     }
   }
@@ -153,9 +162,9 @@ class Cat {
 
   spawn() {
     // Spawn using radial coordinates to distribute in more of a ball
-    const radius = Math.random()*(Math.max(...S.canvas.size))/2
-    const angle = Math.random()*Math.PI*2
-    const [x, y] = [Math.sin(angle)*radius, Math.cos(angle)*radius]
+    const radius = Math.random() * (Math.max(...S.canvas.size)) / 2
+    const angle = Math.random() * Math.PI * 2
+    const [x, y] = [Math.sin(angle) * radius, Math.cos(angle) * radius]
     if (this.detectCollisions([x, y]).length > 0) {
       this.spawn()
     } else {
@@ -164,7 +173,7 @@ class Cat {
   }
 
   resize() {
-    const size = 100 - 3*Math.sqrt(S.canvas.cats.length) + S.meta.magnitude
+    const size = 100 - 3 * Math.sqrt(S.canvas.cats.length) + S.meta.magnitude
     this.size = size > 100 ? 100 : size
   }
 
@@ -172,7 +181,7 @@ class Cat {
     return S.canvas.cats.filter(cat => {
       if (cat.id != this.id) {
         const [dx, dy] = [cat.coordinates[0] - position[0], cat.coordinates[1] - position[1]]
-        if (Math.sqrt(dx**2 + dy**2) < (this.size + cat.size)*S.phys.overlap) {
+        if (Math.sqrt(dx ** 2 + dy ** 2) < (this.size + cat.size) * S.phys.overlap) {
           return true
         }
       }
@@ -181,7 +190,7 @@ class Cat {
 
   updateVelocity(velocity) {
     // Add a little bit of noise to help smooth out the ball
-    this.velocity = [velocity[0] + (Math.random()-0.5)*S.phys.noise, velocity[1] + (Math.random()-0.5)*S.phys.noise]
+    this.velocity = [velocity[0] + (Math.random() - 0.5) * S.phys.noise, velocity[1] + (Math.random() - 0.5) * S.phys.noise]
   }
 
   updatePosition() {
@@ -191,13 +200,13 @@ class Cat {
     // Collision Detection - This physics looks better than real conservation of momentum
     const collisions = this.detectCollisions([x1, y1])
     collisions.forEach(cat => {
-      const [mx, my] = [S.phys.damping*(cat.velocity[0] + this.velocity[0])/2, S.phys.damping*(cat.velocity[1] + this.velocity[1])/2]
+      const [mx, my] = [S.phys.damping * (cat.velocity[0] + this.velocity[0]) / 2, S.phys.damping * (cat.velocity[1] + this.velocity[1]) / 2]
       if (y1 > 0) {
-        this.updateVelocity([-mx + Math.sin(Math.atan(x1/y1))*S.phys.gravity, -my + Math.cos(Math.atan(x1/y1))*S.phys.gravity])
-        cat.updateVelocity([mx - Math.sin(Math.atan(x1/y1))*S.phys.gravity, my - Math.cos(Math.atan(x1/y1))*S.phys.gravity])
+        this.updateVelocity([-mx + Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, -my + Math.cos(Math.atan(x1 / y1)) * S.phys.gravity])
+        cat.updateVelocity([mx - Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, my - Math.cos(Math.atan(x1 / y1)) * S.phys.gravity])
       } else if (x1 != 0 && y1 != 0) {
-        this.updateVelocity([-mx - Math.sin(Math.atan(x1/y1))*S.phys.gravity, -my - Math.cos(Math.atan(x1/y1))*S.phys.gravity])
-        cat.updateVelocity([mx + Math.sin(Math.atan(x1/y1))*S.phys.gravity, my + Math.cos(Math.atan(x1/y1))*S.phys.gravity])
+        this.updateVelocity([-mx - Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, -my - Math.cos(Math.atan(x1 / y1)) * S.phys.gravity])
+        cat.updateVelocity([mx + Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, my + Math.cos(Math.atan(x1 / y1)) * S.phys.gravity])
       } else {
         this.updateVelocity([-mx, -my])
         cat.updateVelocity([mx, my])
@@ -206,9 +215,9 @@ class Cat {
     if (collisions.length == 0) {
       // Unhindered Movement
       if (y1 > 0) {
-        this.updateVelocity([this.velocity[0] - Math.sin(Math.atan(x1/y1))*S.phys.gravity, this.velocity[1] - Math.cos(Math.atan(x1/y1))*S.phys.gravity])
+        this.updateVelocity([this.velocity[0] - Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, this.velocity[1] - Math.cos(Math.atan(x1 / y1)) * S.phys.gravity])
       } else if (x1 != 0 && y1 != 0) {
-        this.updateVelocity([this.velocity[0] + Math.sin(Math.atan(x1/y1))*S.phys.gravity, this.velocity[1] + Math.cos(Math.atan(x1/y1))*S.phys.gravity])
+        this.updateVelocity([this.velocity[0] + Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, this.velocity[1] + Math.cos(Math.atan(x1 / y1)) * S.phys.gravity])
       }
       this.coordinates = [x1, y1]
     }
@@ -220,7 +229,7 @@ class Cat {
 
     // TODO make this look like a cat
     const path = new Path2D()
-    path.arc((S.canvas.size[0]/2) + this.coordinates[0], (S.canvas.size[1]/2) + this.coordinates[1], this.size, 0, 2 * Math.PI);
+    path.arc((S.canvas.size[0] / 2) + this.coordinates[0], (S.canvas.size[1] / 2) + this.coordinates[1], this.size, 0, 2 * Math.PI);
     // path.moveTo((S.canvas.size[0]/2) + this.coordinates[0] - this.size, (S.canvas.size[1]/2) + this.coordinates[1])
     ctx.fill(path)
     // ctx.stroke(path)
@@ -232,24 +241,34 @@ class Skill {
   constructor(props) {
     this.cost = props.cost
     this.effect = props.effect
+    this.enabled = false
     this.icon = props.icon
+    this.key = props.key
     this.label = props.label
     this.level = 0
+    this.assign()
   }
 
-  assign(key) {
-    if (['Q', 'W', 'E', 'R'].includes(key)) {
-      E[`Key${key}`].addEventListener('click', (event) => { this.use(); event.stopPropagation() })
-      E[`Key${key}`].title = this.label
+  assign() {
+    if (['Q', 'W', 'E', 'R'].includes(this.key)) {
+      E[`Key${this.key}`].addEventListener('click', (event) => { this.use(); event.stopPropagation() })
+      E[`Key${this.key}`].title = this.label
     }
   }
 
   buy() {
-    if (S.econ.balance > this.cost) {
+    if (this.enabled && S.econ.balance > this.cost) {
       this.level++
       updateBalance(-this.cost)
       return true
     }
+  }
+
+  enable() {
+    if (E[`Key${this.key}`].classList.contains('hidden')) {
+      E[`Key${this.key}`].classList.remove('hidden');
+    }
+    this.enabled = true;
   }
 }
 
@@ -260,56 +279,56 @@ class HandSkill extends Skill {
       cost: 100,
       effect: '+1',
       icon: '&#x270B;',
-      label: 'Hand',
+      key: props.key,
+      label: 'Hands',
     })
-    this.assign(props.key)
   }
 
   use() {
     if (this.buy()) {
-      this.cost = 100 + 100*this.level // Linear
+      this.cost = 100 + 100 * this.level // Linear
       S.econ.base++
       updateBalance(0)
     }
   }
 }
 
-// #2 - Mult: +10% Mult
-class MultSkill extends Skill {
+// #2 - More: +10% Mult
+class MoreSkill extends Skill {
   constructor(props) {
     super({
       cost: 1000,
       effect: '+0.1x',
       icon: '&#x274E;',
-      label: 'Mult',
+      key: props.key,
+      label: 'More',
     })
-    this.assign(props.key)
   }
 
   use() {
     if (this.buy()) {
-      this.cost = 10*((10+this.level)**2) // Parabolic
+      this.cost = 10 * ((10 + this.level) ** 2) // Parabolic
       S.econ.mult += 10
       updateBalance(0)
     }
   }
 }
 
-// #3 - Bank: +0.01% Interest
-class BankSkill extends Skill {
+// #3 - Grow: +0.01% Interest
+class GrowSkill extends Skill {
   constructor(props) {
     super({
       cost: 10000,
       effect: '+0.01%',
-      icon: '&#x1F3E6;',
-      label: 'Bank',
+      icon: '&#x1F4C8;',
+      key: props.key,
+      label: 'Grow',
     })
-    this.assign(props.key)
   }
 
   use() {
     if (this.buy()) {
-      this.cost = 10**(2 + this.level) // Exponential
+      this.cost = 10 ** (4 + this.level) // Exponential
       S.econ.interest += 0.01
       updateBalance(0)
     }
@@ -343,7 +362,7 @@ document.addEventListener('keydown', hotkeydown, false);
 
 // Economy
 const patCat = () => {
-  updateBalance(S.econ.base*S.econ.mult/100)
+  updateBalance(S.econ.base * S.econ.mult / 100)
   // Trigger Meow Sound Here
   meow.load()
   meow.play()
@@ -351,15 +370,79 @@ const patCat = () => {
 E.canvas.addEventListener('click', patCat)
 const interestInterval = setInterval(() => {
   if (S.econ.interest > 0) {
-    updateBalance(Math.floor(S.econ.balance * S.econ.interest/100))
+    updateBalance(Math.floor(S.econ.balance * S.econ.interest / 100))
   }
 }, 1000)
 
+/* ========= Dialogue ========= */
+class Narrator {
+  constructor(props) {
+    this.currentLine = 'please DO NOT the cat';
+    this.cursor = 0;
+    this.language = props?.language || 'EN';
+    this.loadLines();
+  }
+
+  loadLines() {
+    // TODO: Adjust Lines based on playthrough metadata
+    this.lines = [
+      { milestone: 0, line: 'please DO NOT the cat' },
+      { milestone: 13, line: 'AHHH! What are you doing?' },
+      { milestone: 30, line: "Can you STOP?" },
+      { milestone: 50, line: "PLEASE" },
+      { milestone: 65, line: "Okay." },
+      { milestone: 80, line: "You really are doing this" },
+      { milestone: 100, line: "..." },
+      { milestone: 200, line: "Look." },
+      { milestone: 400, line: "I can't say I didn't warn you" },
+      { milestone: 600, line: "But if you're going to commit..." },
+      { milestone: 800, line: "You should do it properly." },
+      { milestone: 1000, line: "The better you treat them, the better they'll treat you" },
+      { milestone: 1500, line: "It's just the way the universe works" },
+      { milestone: 2000, line: "Or at least that's what I was told..." },
+      { milestone: 4000, line: "We sure have a lot of cats now. Have you ever wondered where they come from?" },
+      { milestone: 7000, line: "When a mommy and daddy cat love each other very much..." },
+      { milestone: 10000, line: "But really. Is this bottomless ball of cats not a mystery to you?" },
+      { milestone: 20000, line: "The truth is..." },
+      { milestone: 40000, line: "...something along the lines of..." },
+      { milestone: 70000, line: "<i>*pages flicking*</i>" },
+      { milestone: 100000, line: "...I don't know either." },
+      { milestone: 200000, line: "..." },
+      { milestone: 400000, line: "Hey. Don't judge me. It's my first day!" },
+      { milestone: 700000, line: "What's the worst that could possibly happen?" },
+      { milestone: 10**6, line: "OH LORD WHAT IS THAT!!! IT'S A MEGACAT" },
+      { milestone: Infinity, line: "Your curiosity got you killed by cats." },
+    ]
+  }
+
+  nextLine() {
+    if (S.skills.Q.level == 0 && S.econ.balance > S.skills.Q.cost) {
+      this.currentLine = `I'll find someone to take them off your ${S.skills.Q.label} ${S.skills.Q.icon}`
+    } else if (S.skills.Q.level == 1) {
+      this.currentLine = "OH NO. THIS IS WORSE"
+    } else if (S.skills.W.level == 0 && S.econ.balance > S.skills.W.cost) {
+      this.currentLine = `If you're nice they'll go off and find ${S.skills.W.label} ${S.skills.W.icon}`
+    } else if (S.skills.E.level == 0 && S.econ.balance > S.skills.E.cost) {
+      this.currentLine = `Oh! They want to have kittens. Maybe we should give them space to ${S.skills.E.label} ${S.skills.E.icon}`
+    } else if (S.econ.balance >= this.lines[this.cursor + 1].milestone) {
+      this.cursor++;
+    } else {
+      this.currentLine = this.lines[this.cursor].line
+    }
+    this.sayLine(this.currentLine)
+  }
+
+  sayLine(line) {
+    E.dialogue.innerHTML = line
+  }
+}
+
 /* ========= Init ========= */
 S.canvas.cats.push(new Cat({ coordinates: [0, 0] })) // The first Cat is statically centered
-S.skills.Q = new HandSkill({ key: 'Q'})
-S.skills.W = new MultSkill({ key: 'W'})
-S.skills.E = new BankSkill({ key: 'E'})
+S.dialogue.narrator = new Narrator('EN')
+S.skills.Q = new HandSkill({ key: 'Q' })
+S.skills.W = new MoreSkill({ key: 'W' })
+S.skills.E = new GrowSkill({ key: 'E' })
 
 /* ========= Debug ========= */
-// setInterval(patCat, 10)
+// setInterval(patCat, 100)
