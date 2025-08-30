@@ -81,7 +81,7 @@ const notation = (x, short) => {
 
 const updateHud = () => {
   E.counter.innerHTML = `${notation(S.econ.balance)} ${blackCat}`;
-  E.stats.innerHTML = `${S.econ.base > 1 ? S.econ.base+' Base<br>' : ''}${S.econ.mult > 100 ? (S.econ.mult / 100).toFixed(1)+' x Mult<br>' : ''}${S.econ.interest > 0 ? (S.econ.interest.toFixed(2))+' % Interest' : ''}`;
+  E.stats.innerHTML = `${S.econ.base > 1 ? S.econ.base+' Base<br>' : ''}${S.econ.mult > 100 ? (S.econ.mult / 100).toFixed(1)+'x Mult<br>' : ''}${S.econ.interest > 0 ? (S.econ.interest.toFixed(2))+'% Interest' : ''}`;
   ['Q', 'W', 'E', 'R'].forEach(key => {
     if (S.skills[key]) {
       const element = E[`Key${key}`]
