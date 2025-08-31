@@ -17,6 +17,7 @@ const S = {
   },
   meta: {
     magnitude: 0,
+    playthrough: 1,
   },
   phys: {
     damping: 0.3,
@@ -340,7 +341,7 @@ class GrowSkill extends Skill {
 
   use() {
     if (this.buy()) {
-      this.cost = 10 ** (4 + this.level) // Exponential
+      this.cost = 10 ** (4 + this.level/10) // Exponential
       S.econ.interest += 0.01
       updateBalance(0)
     }
@@ -391,19 +392,18 @@ class Narrator {
   constructor(props) {
     this.currentLine = 'please DO NOT the cat';
     this.cursor = 0;
-    this.language = props?.language || 'EN';
-    this.loadLines();
+    this.playthrough = props.playthrough;
+    this.loadLines(this.playthrough);
   }
 
-  loadLines() {
-    // TODO: Adjust Lines based on playthrough metadata
-    this.lines = [
+  loadLines(playthrough) {
+    const lines = [
       { milestone: 0, line: 'please DO NOT the cat' },
-      { milestone: 12, line: 'AHHH! What are you doing?' },
-      { milestone: 30, line: "Can you STOP?" },
-      { milestone: 50, line: "PLEASE" },
-      { milestone: 65, line: "Okay." },
-      { milestone: 80, line: "You really are doing this" },
+      { milestone: 12, line: 'AHHH! What are you doing?', playthrough: [1] },
+      { milestone: 30, line: "Can you STOP?", playthrough: [1] },
+      { milestone: 50, line: "PLEASE", playthrough: [1] },
+      { milestone: 65, line: "Okay.", playthrough: [1] },
+      { milestone: 80, line: "You really are doing this", playthrough: [1] },
       { milestone: 100, line: "Look..." },
       { milestone: 200, line: "I can't say I didn't warn you" },
       { milestone: 400, line: "But if you're going to commit..." },
@@ -425,6 +425,12 @@ class Narrator {
       { milestone: 10**6, line: "OH LORD WHAT IS THAT!!! IT'S A MEGACAT" },
       { milestone: Infinity, line: "Your curiosity got you killed by cats." },
     ]
+
+    this.lines = lines.filter(line => {
+      if (!line.playthrough || line.playthrough.includes(playthrough)) {
+        return true
+      }
+    })
   }
 
   nextLine() {
@@ -451,7 +457,7 @@ class Narrator {
 
 /* ========= Init ========= */
 S.canvas.cats.push(new Cat({ coordinates: [0, 0] })) // The first Cat is statically centered
-S.dialogue.narrator = new Narrator('EN')
+S.dialogue.narrator = new Narrator({ playthrough: S.meta.playthrough })
 S.skills.Q = new HandSkill({ key: 'Q' })
 S.skills.W = new MoreSkill({ key: 'W' })
 S.skills.E = new GrowSkill({ key: 'E' })
