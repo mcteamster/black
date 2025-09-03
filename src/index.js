@@ -9,7 +9,7 @@ const S = {
     narrator: null,
   },
   econ: {
-    balance: 100000, // Current Cats
+    balance: 1, // Current Cats
     base: 1, // Cats per click
     interest: 0, // Growth per tick
     mult: 100, // Multiplier percentage
