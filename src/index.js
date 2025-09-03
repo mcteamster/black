@@ -5,11 +5,11 @@ const S = {
     size: [window.innerWidth * 1.5, window.innerHeight * 1.5],
   },
   dialogue: {
-    milestone: 0,
+    predicate: 0,
     narrator: null,
   },
   econ: {
-    balance: 1, // Current Cats
+    balance: 100000, // Current Cats
     base: 1, // Cats per click
     interest: 0, // Growth per tick
     mult: 100, // Multiplier percentage
@@ -36,7 +36,7 @@ const S = {
 /* ========= Page Setup ========= */
 // Elements
 const E = {}
-const ids = ['canvas', 'counter', 'dialogue', 'stats', 'KeyQ', 'KeyW', 'KeyE', 'KeyR']
+const ids = ['canvas', 'counter', 'dialogue', 'interest', 'stats', 'KeyQ', 'KeyW', 'KeyE', 'KeyR']
 ids.forEach(id => E[id] = document.getElementById(id));
 const body = document.body;
 
@@ -81,8 +81,9 @@ const notation = (x, short) => {
 }
 
 const updateHud = () => {
-  E.counter.innerHTML = `${notation(S.econ.balance)} ${blackCat}`;
-  E.stats.innerHTML = `${S.econ.base > 1 ? S.econ.base+' Base<br>' : ''}${S.econ.mult > 100 ? (S.econ.mult / 100).toFixed(1)+'x Mult<br>' : ''}${S.econ.interest > 0 ? (S.econ.interest.toFixed(2))+'% Interest' : ''}`;
+  E.counter.innerHTML = `${blackCat} ${notation(S.econ.balance)}`;
+  E.interest.innerHTML = `${S.econ.interest > 0 ? '&#x1F4C8;+' + (S.econ.interest.toFixed(2)) + '%' : ''}`
+  E.stats.innerHTML = `${S.econ.base > 1 ? '&#x270B;' + S.econ.base : ''}${S.econ.mult > 100 ? ' &#x274E;' + (S.econ.mult / 100).toFixed(1) : ''}`;
   ['Q', 'W', 'E', 'R'].forEach(key => {
     if (S.skills[key]) {
       const element = E[`Key${key}`]
@@ -193,7 +194,7 @@ class Cat {
   updateVelocity(velocity) {
     // Add a little bit of noise to help smooth out the ball
     this.velocity = [velocity[0] + (Math.random() - 0.5) * S.phys.noise, velocity[1] + (Math.random() - 0.5) * S.phys.noise]
-    this.rotation += 0.01*(Math.random() - 0.5);
+    this.rotation += 0.01 * (Math.random() - 0.5);
   }
 
   updatePosition() {
@@ -233,17 +234,17 @@ class Cat {
     this.resize();
     this.updatePosition()
     const offsetX = (S.canvas.size[0] / 2) + this.coordinates[0]
-    const offsetY =  (S.canvas.size[1] / 2) + this.coordinates[1]
-    const detail = 1.5 - 0.001*S.canvas.cats.length
+    const offsetY = (S.canvas.size[1] / 2) + this.coordinates[1]
+    const detail = 1.5 - 0.001 * S.canvas.cats.length
     const path = new Path2D()
     path.arc(offsetX, offsetY, this.size, 0, 2 * Math.PI); // Head
     if (detail > 1) {
-      path.moveTo(offsetX - this.size*Math.sin(this.orientation + Math.PI*(90/180)), offsetY - this.size*Math.cos(this.orientation + Math.PI*(90/180))) // Left Ear
-      path.lineTo(offsetX - detail*this.size*Math.sin(this.orientation + Math.PI*(30/180)), offsetY - detail*this.size*Math.cos(this.orientation + Math.PI*(30/180))) 
-      path.lineTo(offsetX - this.size*Math.sin(this.orientation + Math.PI*(10/180)), offsetY - this.size*Math.cos(this.orientation + Math.PI*(10/180)))
-      path.moveTo(offsetX - this.size*Math.sin(this.orientation - Math.PI*(10/180)), offsetY - this.size*Math.cos(this.orientation - Math.PI*(10/180))) // Right Ear
-      path.lineTo(offsetX - detail*this.size*Math.sin(this.orientation - Math.PI*(30/180)), offsetY - detail*this.size*Math.cos(this.orientation - Math.PI*(30/180))) 
-      path.lineTo(offsetX - this.size*Math.sin(this.orientation - Math.PI*(90/180)), offsetY - this.size*Math.cos(this.orientation - Math.PI*(90/180)))
+      path.moveTo(offsetX - this.size * Math.sin(this.orientation + Math.PI * (90 / 180)), offsetY - this.size * Math.cos(this.orientation + Math.PI * (90 / 180))) // Left Ear
+      path.lineTo(offsetX - detail * this.size * Math.sin(this.orientation + Math.PI * (30 / 180)), offsetY - detail * this.size * Math.cos(this.orientation + Math.PI * (30 / 180)))
+      path.lineTo(offsetX - this.size * Math.sin(this.orientation + Math.PI * (10 / 180)), offsetY - this.size * Math.cos(this.orientation + Math.PI * (10 / 180)))
+      path.moveTo(offsetX - this.size * Math.sin(this.orientation - Math.PI * (10 / 180)), offsetY - this.size * Math.cos(this.orientation - Math.PI * (10 / 180))) // Right Ear
+      path.lineTo(offsetX - detail * this.size * Math.sin(this.orientation - Math.PI * (30 / 180)), offsetY - detail * this.size * Math.cos(this.orientation - Math.PI * (30 / 180)))
+      path.lineTo(offsetX - this.size * Math.sin(this.orientation - Math.PI * (90 / 180)), offsetY - this.size * Math.cos(this.orientation - Math.PI * (90 / 180)))
     }
     ctx.fill(path)
   }
@@ -256,6 +257,7 @@ class Skill {
     this.effect = props.effect
     this.enabled = false
     this.icon = props.icon
+    this.id = props.id
     this.key = props.key
     this.label = props.label
     this.level = 0
@@ -289,6 +291,7 @@ class Skill {
 class HandSkill extends Skill {
   constructor(props) {
     super({
+      id: 's1',
       cost: 100,
       effect: '+1',
       icon: '&#x270B;',
@@ -310,6 +313,7 @@ class HandSkill extends Skill {
 class MoreSkill extends Skill {
   constructor(props) {
     super({
+      id: 's2',
       cost: 1000,
       effect: '+0.1x',
       icon: '&#x274E;',
@@ -320,7 +324,7 @@ class MoreSkill extends Skill {
 
   use() {
     if (this.buy()) {
-      this.cost = 1000 + 10*((this.level) ** 2) // Parabolic
+      this.cost = 1000 + 10 * ((this.level) ** 2) // Parabolic
       S.econ.mult += 10
       updateBalance(0)
     }
@@ -331,6 +335,7 @@ class MoreSkill extends Skill {
 class GrowSkill extends Skill {
   constructor(props) {
     super({
+      id: 's3',
       cost: 10000,
       effect: '+0.01%',
       icon: '&#x1F4C8;',
@@ -341,7 +346,7 @@ class GrowSkill extends Skill {
 
   use() {
     if (this.buy()) {
-      this.cost = 10 ** (4 + this.level/10) // Exponential
+      this.cost = 10 ** (4 + this.level / 10) // Exponential
       S.econ.interest += 0.01
       updateBalance(0)
     }
@@ -398,32 +403,51 @@ class Narrator {
 
   loadLines(playthrough) {
     const lines = [
-      { milestone: 0, line: 'please DO NOT the cat' },
-      { milestone: 12, line: 'AHHH! What are you doing?', playthrough: [1] },
-      { milestone: 30, line: "Can you STOP?", playthrough: [1] },
-      { milestone: 50, line: "PLEASE", playthrough: [1] },
-      { milestone: 65, line: "Okay.", playthrough: [1] },
-      { milestone: 80, line: "You really are doing this", playthrough: [1] },
-      { milestone: 100, line: "Look..." },
-      { milestone: 200, line: "I can't say I didn't warn you" },
-      { milestone: 400, line: "But if you're going to commit..." },
-      { milestone: 600, line: "You should do it properly." },
-      { milestone: 800, line: "The better you treat them, the better they'll treat you" },
-      { milestone: 1000, line: "Give and you shall receive" },
-      { milestone: 1500, line: "It's just the way the universe works" },
-      { milestone: 2000, line: "Or at least that's what I was told..." },
-      { milestone: 4000, line: "We sure have a lot of cats now. Have you ever wondered where they come from?" },
-      { milestone: 7000, line: "When a mommy and daddy cat love each other very much..." },
-      { milestone: 10000, line: "But really. Is this bottomless ball of cats not a mystery to you?" },
-      { milestone: 20000, line: "The truth is..." },
-      { milestone: 40000, line: "...something along the lines of..." },
-      { milestone: 70000, line: "<i>*pages flicking*</i>" },
-      { milestone: 100000, line: "...I don't know either." },
-      { milestone: 200000, line: "..." },
-      { milestone: 400000, line: "Hey. Don't judge me. It's my first day!" },
-      { milestone: 700000, line: "What's the worst that could possibly happen?" },
-      { milestone: 10**6, line: "OH LORD WHAT IS THAT!!! IT'S A MEGACAT" },
-      { milestone: Infinity, line: "Your curiosity got you killed by cats." },
+      { predicate: 0, line: 'please DO NOT the cat' },
+      { predicate: 12, line: 'AHHH! What are you doing?' },
+      { predicate: 30, line: "Can you STOP?" },
+      { predicate: 50, line: "PLEASE" },
+      { predicate: 65, line: "Okay." },
+      { predicate: 80, line: "You really are doing this" },
+      {
+        predicate: () => { return (S.skills.Q.id == 's1' && S.skills.Q.level == 0 && S.econ.balance > S.skills.Q.cost) },
+        line: `I'll find someone to take them off your Hands`
+      },
+      {
+        predicate: () => { return (S.skills.Q.id == 's1' && S.skills.Q.level > 0) },
+        line: `OH NO. THIS IS WORSE!`
+      },
+      { predicate: 100, line: "Look..." },
+      { predicate: 200, line: "I can't say I didn't warn you" },
+      { predicate: 400, line: "But if you're going to commit..." },
+      { predicate: 600, line: "You should do it properly." },
+      { predicate: 800, line: "The better you treat them, the better they'll treat you" },
+      {
+        predicate: () => { return (S.skills.W.id == 's2' && S.skills.W.level == 0 && S.econ.balance > S.skills.W.cost) },
+        line: `If you're nice to them they'll go off and find More`
+      },
+      {
+        predicate: () => { return (S.skills.W.id == 's2' && S.skills.W.level > 0) },
+        line: `Give and you shall receive`
+      },
+      { predicate: 1500, line: "It's just the way the universe works" },
+      { predicate: 2000, line: "Or at least that's what I was told..." },
+      { predicate: 4000, line: "We sure have a lot of cats now. Have you ever wondered where they come from?" },
+      { predicate: 7000, line: "When a mommy and daddy cat love each other very much..." },
+      {
+        predicate: () => { return (S.skills.E.id == 's3' && S.skills.E.level == 0 && S.econ.balance > S.skills.E.cost) },
+        line: `Oh! They want to have kittens. Maybe we should give them space to Grow?`
+      },
+      { predicate: 15000, line: "But really. Is this bottomless ball of cats not a mystery to you?" },
+      { predicate: 20000, line: "The truth is..." },
+      { predicate: 40000, line: "...something along the lines of..." },
+      { predicate: 70000, line: "<i>*pages flicking*</i>" },
+      { predicate: 100000, line: "...I don't know either." },
+      { predicate: 200000, line: "..." },
+      { predicate: 400000, line: "Hey. Don't judge me. It's my first day!" },
+      { predicate: 700000, line: "What's the worst that could possibly happen?" },
+      { predicate: 10 ** 6, line: "OH LORD WHAT IS THAT!!! IT'S A MEGACAT" },
+      { predicate: Infinity, line: "Your curiosity got you killed by cats." },
     ]
 
     this.lines = lines.filter(line => {
@@ -434,19 +458,10 @@ class Narrator {
   }
 
   nextLine() {
-    if (S.skills.Q.level == 0 && S.econ.balance > S.skills.Q.cost) {
-      this.currentLine = `I'll find someone to take them off your ${S.skills.Q.label} ${S.skills.Q.icon}`
-    } else if (S.skills.Q.level == 1) {
-      this.currentLine = "OH NO. THIS IS WORSE"
-    } else if (S.skills.W.level == 0 && S.econ.balance > S.skills.W.cost) {
-      this.currentLine = `If you're nice to them they'll go off and find ${S.skills.W.label} ${S.skills.W.icon}`
-    } else if (S.skills.E.level == 0 && S.econ.balance > S.skills.E.cost) {
-      this.currentLine = `Oh! They want to have kittens. Maybe we should give them space to ${S.skills.E.label} ${S.skills.E.icon}`
-    } else if (S.econ.balance >= this.lines[this.cursor + 1].milestone) {
-      this.cursor++;
-    } else {
-      this.currentLine = this.lines[this.cursor].line
+    if ((typeof this.lines[this.cursor + 1].predicate == 'number' && S.econ.balance > this.lines[this.cursor + 1].predicate) || (typeof this.lines[this.cursor + 1].predicate == 'function' && this.lines[this.cursor + 1].predicate())) {
+      this.cursor++
     }
+    this.currentLine = this.lines[this.cursor].line
     this.sayLine(this.currentLine)
   }
 

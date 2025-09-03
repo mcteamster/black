@@ -52,7 +52,6 @@ body {
   bottom: 0;
   left: 0;
   z-index: 10;
-  background: linear-gradient(to top, rgba(0,0,0,0.5), rgba(0,0,0,0));
 }
 
 #counter {
@@ -68,7 +67,7 @@ body {
 
 #dialogue {
   position: fixed;
-  top: 10%;
+  top: 15%;
   left: 50%;
   transform: translate(-50%, 0);
   z-index: 10;
@@ -79,11 +78,20 @@ body {
   background: radial-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0) 75%);
 }
 
+#interest {
+  position: fixed;
+  top: 5%;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  text-align: center;
+}
+
 #stats {
   position: fixed;
-  top: 1%;
-  left: 1%;
-  text-align: left;
+  bottom: 10%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.25em;
 }
 
 @media only screen and (orientation: portrait) and (max-device-width: 568px) {
