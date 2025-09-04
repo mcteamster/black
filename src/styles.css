@@ -20,13 +20,13 @@ body {
 }
 
 .command {
-  height: 2em;
   border-radius: 1em;
   background: #111;
   padding: 0.5em;
   margin: 0.5em;
   height: 4em;
-  width: 6em;
+  width: 5em;
+  font-size: 1.5em;
   font-weight: bold;
 }
 
@@ -67,15 +67,16 @@ body {
 
 #dialogue {
   position: fixed;
-  top: 15%;
+  top: 12.5%;
   left: 50%;
   transform: translate(-50%, 0);
   z-index: 10;
-  width: 90%;
-  padding: 0;
+  width: 20em;
+  max-width: 90%;
+  padding: 0.25em;
   margin: 0;
   font-size: 2em;
-  background: radial-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0) 75%);
+  background-color: rgba(0,0,0,0.75);
 }
 
 #interest {
@@ -88,10 +89,11 @@ body {
 
 #stats {
   position: fixed;
-  bottom: 10%;
+  bottom: 4em;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 1.25em;
+  font-size: 2em;
+  background: radial-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0) 75%);
 }
 
 @media only screen and (orientation: portrait) and (max-device-width: 568px) {

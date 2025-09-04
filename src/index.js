@@ -17,6 +17,7 @@ const S = {
   },
   meta: {
     magnitude: 0,
+    mute: false,
     playthrough: 1,
   },
   phys: {
@@ -42,6 +43,7 @@ const body = document.body;
 
 // Constants
 const blackCat = '&#x1F408;&#x200D;&#x2B1B;' // 🐈‍⬛
+const meows = Array.from({ length: 5 }, () => { return new Audio('./meow.mp3') })
 
 // Canvas
 E.canvas.width = S.canvas.size[0];
@@ -83,7 +85,7 @@ const notation = (x, short) => {
 const updateHud = () => {
   E.counter.innerHTML = `${blackCat} ${notation(S.econ.balance)}`;
   E.interest.innerHTML = `${S.econ.interest > 0 ? '&#x1F4C8;+' + (S.econ.interest.toFixed(2)) + '%' : ''}`
-  E.stats.innerHTML = `${S.econ.base > 1 ? '&#x270B;' + S.econ.base : ''}${S.econ.mult > 100 ? ' &#x274E;' + (S.econ.mult / 100).toFixed(1) : ''}`;
+  E.stats.innerHTML = `${S.econ.base > 1 ? '&#x270B;' + S.econ.base : ''}${S.econ.mult > 100 ? ' &#x274E; ' + (S.econ.mult / 100).toFixed(1) : ''}`;
   ['Q', 'W', 'E', 'R'].forEach(key => {
     if (S.skills[key]) {
       const element = E[`Key${key}`]
@@ -365,15 +367,11 @@ const renderFrame = () => {
 setInterval(renderFrame, 50) // 20 FPS
 
 // Hotkeys
-const hotkeyup = (event) => {
-  if (event.code === 'Space' || event.key === ' ') {
-    patCat();
-  }
-}
-document.addEventListener('keyup', hotkeyup, false);
 const hotkeydown = (event) => {
   if (['KeyQ', 'KeyW', 'KeyE', 'KeyR'].includes(event.code)) {
     document.getElementById(event.code).click()
+  } else if (event.code === 'Space' || event.key === ' ') {
+    patCat();
   }
 }
 document.addEventListener('keydown', hotkeydown, false);
@@ -382,8 +380,9 @@ document.addEventListener('keydown', hotkeydown, false);
 const patCat = () => {
   updateBalance(S.econ.base * S.econ.mult / 100)
   // Trigger Meow Sound Here
-  // const meow = new Audio('./meow.mp3')
-  // meow.play()
+  if (!S.meta.mute) {
+    meows[Math.floor(meows.length * Math.random())].play()
+  }
 }
 E.canvas.addEventListener('click', patCat)
 const interestInterval = setInterval(() => {
