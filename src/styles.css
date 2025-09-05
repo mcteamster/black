@@ -115,6 +115,6 @@ canvas {
 /* Mobile */
 @media only screen and (orientation: portrait) and (max-device-width: 568px) {
   body {
-    font-size: 1.25em;
+    font-size: 1em;
   }
 }

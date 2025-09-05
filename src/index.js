@@ -2,7 +2,7 @@
 const S = {
   canvas: {
     cats: [],
-    size: [window.innerWidth * 1.5, window.innerHeight * 1.5],
+    size: [window.screen.width * 1.5, window.screen.height * 1.5],
   },
   dialogue: {
     predicate: 0,
@@ -182,8 +182,8 @@ class Cat {
   }
 
   resize() {
-    const size = 90 - 3 * Math.sqrt(S.canvas.cats.length) + S.meta.magnitude
-    this.size = size > 90 ? 90 : size
+    const size = 85 - 2.5 * Math.sqrt(S.canvas.cats.length) + S.meta.magnitude
+    this.size = size > 85 ? 85 : size
   }
 
   detectCollisions(position) {
@@ -411,7 +411,7 @@ class Narrator {
   loadLines(playthrough) {
     const dialogLines = [
       { predicate: 0, line: 'please DO NOT the cat' },
-      { predicate: 12, line: 'AHHH! What are you doing?' },
+      { predicate: 13, line: 'AHHH! What are you doing?' },
       { predicate: 25, line: "HEY!" },
       { predicate: 40, line: "Quit it!" },
       { predicate: 55, line: "PLEASE?" },
