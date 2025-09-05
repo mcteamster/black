@@ -84,15 +84,19 @@ const notation = (x, short) => {
 
 const updateHud = () => {
   E.counter.innerHTML = `${blackCat} ${notation(S.econ.balance)}`;
-  E.interest.innerHTML = `${S.econ.interest > 0 ? '&#x1F4C8;+' + (S.econ.interest.toFixed(2)) + '%' : ''}`
-  E.stats.innerHTML = `${S.econ.base > 1 ? '&#x270B;' + S.econ.base : ''}${S.econ.mult > 100 ? ' &#x274E; ' + (S.econ.mult / 100).toFixed(1) : ''}`;
+  E.interest.innerHTML = `${S.econ.interest > 0 ? '&#x1F4C8; ' + (S.econ.interest.toFixed(2)) + '% p.s' : ''}`
+  E.stats.innerHTML = `${S.econ.base > 1 ? '&#x270B;' + notation(S.econ.base, true) : ''}${S.econ.mult > 100 ? ' &#x274E; ' + (S.econ.mult / 100).toFixed(1) : ''}`;
   ['Q', 'W', 'E', 'R'].forEach(key => {
     if (S.skills[key]) {
       const element = E[`Key${key}`]
       if (S.econ.balance > S.skills[key].cost) {
         S.skills[key].enable()
       }
-      element.innerHTML = `${S.skills[key].icon}<br>${S.skills[key].effect}<br>${notation(S.skills[key].cost, true)}${blackCat}`
+      element.innerHTML = `<div>
+        <div class='commandIcon'>${S.skills[key].icon}</div>
+        <div class='commandEffect'>${S.skills[key].effect}</div>
+        <div class='commandCost'>${notation(S.skills[key].cost, true)} ${blackCat}</div>
+      </div>`
     }
   })
   S.dialogue.narrator.nextLine();
@@ -105,7 +109,7 @@ const updateMagnitude = () => {
     Math.max(50 - Math.log10(S.econ.balance), 0),
     Math.max(50 - 2 * Math.log10(S.econ.balance), 10)
   ]
-  body.style.backgroundColor = `hsl(${hue},${saturation}%,${lightness}%)`
+  body.style.background = `radial-gradient(circle 100vh, hsl(${hue},${saturation}%,${lightness}%) 0%, hsl(${hue + 30},${saturation}%,${lightness - 10}%) 75%)`
 
   if (Math.floor(Math.log10(S.econ.balance)) > S.meta.magnitude) {
     S.meta.magnitude = Math.floor(Math.log10(S.econ.balance))
@@ -289,8 +293,8 @@ class Skill {
   }
 }
 
-// #1 - Hand: +1 Base
-class HandSkill extends Skill {
+// #1 - Hands: +1 Base
+class HandsSkill extends Skill {
   constructor(props) {
     super({
       id: 's1',
@@ -311,8 +315,8 @@ class HandSkill extends Skill {
   }
 }
 
-// #2 - More: +10% Mult
-class MoreSkill extends Skill {
+// #2 - Times: +10% Mult
+class TimesSkill extends Skill {
   constructor(props) {
     super({
       id: 's2',
@@ -320,7 +324,7 @@ class MoreSkill extends Skill {
       effect: '+0.1x',
       icon: '&#x274E;',
       key: props.key,
-      label: 'More',
+      label: 'Times',
     })
   }
 
@@ -394,49 +398,30 @@ const interestInterval = setInterval(() => {
 /* ========= Dialogue ========= */
 class Narrator {
   constructor(props) {
-    this.currentLine = 'please DO NOT the cat';
-    this.cursor = 0;
+    this.currentLine = '';
     this.playthrough = props.playthrough;
     this.loadLines(this.playthrough);
   }
 
   loadLines(playthrough) {
-    const lines = [
+    const dialogLines = [
       { predicate: 0, line: 'please DO NOT the cat' },
       { predicate: 12, line: 'AHHH! What are you doing?' },
-      { predicate: 30, line: "Can you STOP?" },
-      { predicate: 50, line: "PLEASE" },
-      { predicate: 65, line: "Okay." },
-      { predicate: 80, line: "You really are doing this" },
-      {
-        predicate: () => { return (S.skills.Q.id == 's1' && S.skills.Q.level == 0 && S.econ.balance > S.skills.Q.cost) },
-        line: `I'll find someone to take them off your Hands`
-      },
-      {
-        predicate: () => { return (S.skills.Q.id == 's1' && S.skills.Q.level > 0) },
-        line: `OH NO. THIS IS WORSE!`
-      },
+      { predicate: 25, line: "HEY!" },
+      { predicate: 40, line: "Quit it!" },
+      { predicate: 55, line: "PLEASE?" },
+      { predicate: 70, line: "Okay." },
+      { predicate: 85, line: "You're really doing this" },
       { predicate: 100, line: "Look..." },
       { predicate: 200, line: "I can't say I didn't warn you" },
       { predicate: 400, line: "But if you're going to commit..." },
       { predicate: 600, line: "You should do it properly." },
       { predicate: 800, line: "The better you treat them, the better they'll treat you" },
-      {
-        predicate: () => { return (S.skills.W.id == 's2' && S.skills.W.level == 0 && S.econ.balance > S.skills.W.cost) },
-        line: `If you're nice to them they'll go off and find More`
-      },
-      {
-        predicate: () => { return (S.skills.W.id == 's2' && S.skills.W.level > 0) },
-        line: `Give and you shall receive`
-      },
+      { predicate: 1000, line: "Give and you shall receive" },
       { predicate: 1500, line: "It's just the way the universe works" },
       { predicate: 2000, line: "Or at least that's what I was told..." },
       { predicate: 4000, line: "We sure have a lot of cats now. Have you ever wondered where they come from?" },
       { predicate: 7000, line: "When a mommy and daddy cat love each other very much..." },
-      {
-        predicate: () => { return (S.skills.E.id == 's3' && S.skills.E.level == 0 && S.econ.balance > S.skills.E.cost) },
-        line: `Oh! They want to have kittens. Maybe we should give them space to Grow?`
-      },
       { predicate: 15000, line: "But really. Is this bottomless ball of cats not a mystery to you?" },
       { predicate: 20000, line: "The truth is..." },
       { predicate: 40000, line: "...something along the lines of..." },
@@ -449,18 +434,71 @@ class Narrator {
       { predicate: Infinity, line: "Your curiosity got you killed by cats." },
     ]
 
-    this.lines = lines.filter(line => {
-      if (!line.playthrough || line.playthrough.includes(playthrough)) {
+    const skillLines = [
+      {
+        predicate: () => { return (S.skills.Q?.level == 0 && S.econ.balance > S.skills.Q?.cost) },
+        line: `I'll find someone to take them off your HANDS`,
+        include: () => { return (S.skills.Q?.id == 's1') },
+      },
+      {
+        predicate: () => { return (S.skills.Q?.level == 1 && S.econ.balance < (S.skills.Q?.cost)) },
+        line: `OH NO. THIS IS WORSE!`,
+        include: () => { return (S.skills.Q?.id == 's1') },
+      },
+      {
+        predicate: () => { return (S.skills.W?.level == 0 && S.econ.balance > S.skills.W?.cost) },
+        line: `They'll go out and tell others about the good TIMES`,
+        include: () => { return (S.skills.W?.id == 's2') },
+      },
+      {
+        predicate: () => { return (S.skills.E?.level == 0 && S.econ.balance > S.skills.E?.cost) },
+        line: `They want to have kittens! Maybe we should give them space to GROW?`,
+        include: () => { return (S.skills.E?.id == 's3') },
+      },
+    ]
+
+    this.dialogLines = dialogLines.filter(line => {
+      if (!line.include || line.include()) {
+        return true
+      }
+    })
+
+    this.skillLines = skillLines.filter(line => {
+      if (!line.include || line.include()) {
         return true
       }
     })
   }
 
   nextLine() {
-    if ((typeof this.lines[this.cursor + 1].predicate == 'number' && S.econ.balance > this.lines[this.cursor + 1].predicate) || (typeof this.lines[this.cursor + 1].predicate == 'function' && this.lines[this.cursor + 1].predicate())) {
-      this.cursor++
+    const skillLines = this.skillLines.filter((line) => {
+      if (typeof line.predicate == 'number' && S.econ.balance > line.predicate) {
+        return true
+      } else if (typeof line.predicate == 'function' && line.predicate()) {
+        return true
+      }
+    })
+    if (skillLines.length > 0) {
+      if (this.currentLine != skillLines[skillLines.length - 1].line) {
+        this.currentLine = skillLines[skillLines.length - 1].line
+      }
+    } else {
+      const dialogLines = this.dialogLines.filter((line) => {
+        if (typeof line.predicate == 'number' && S.econ.balance > line.predicate) {
+          return true
+        } else if (typeof line.predicate == 'function' && line.predicate()) {
+          return true
+        }
+      })
+      if (dialogLines.length > 0) {
+        if (this.currentLine != dialogLines[0].line) {
+          this.currentLine = dialogLines[0].line
+          this.dialogLines = this.dialogLines.filter((line) => {
+            return (line.line != this.currentLine)
+          })
+        }
+      }
     }
-    this.currentLine = this.lines[this.cursor].line
     this.sayLine(this.currentLine)
   }
 
@@ -471,10 +509,10 @@ class Narrator {
 
 /* ========= Init ========= */
 S.canvas.cats.push(new Cat({ coordinates: [0, 0] })) // The first Cat is statically centered
-S.dialogue.narrator = new Narrator({ playthrough: S.meta.playthrough })
-S.skills.Q = new HandSkill({ key: 'Q' })
-S.skills.W = new MoreSkill({ key: 'W' })
+S.skills.Q = new HandsSkill({ key: 'Q' })
+S.skills.W = new TimesSkill({ key: 'W' })
 S.skills.E = new GrowSkill({ key: 'E' })
+S.dialogue.narrator = new Narrator({ playthrough: S.meta.playthrough })
 
 /* ========= Debug ========= */
-// setInterval(patCat, 100)
+// S.econ.balance = 10**5

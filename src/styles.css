@@ -1,5 +1,6 @@
+/* Base */
 body {
-  background-color: hsl(140,50%,50%);
+  background: radial-gradient(circle 100vh, hsl(140, 50%, 50%) 0%, hsl(170, 50%, 40%) 75%);
   color: white;
   font-family: 'Courier New', Courier, monospace;
   font-size: 1.5em;
@@ -9,6 +10,14 @@ body {
   cursor: pointer;
 }
 
+canvas {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Layouts */
 .centered {
   display: flex;
   align-items: center;
@@ -19,15 +28,8 @@ body {
   flex-direction: column;
 }
 
-.command {
-  border-radius: 1em;
-  background: #111;
-  padding: 0.5em;
-  margin: 0.5em;
-  height: 4em;
-  width: 5em;
-  font-size: 1.5em;
-  font-weight: bold;
+.row {
+  flex-direction: row;
 }
 
 .hidden {
@@ -35,15 +37,27 @@ body {
   visibility: hidden;
 }
 
-.row {
-  flex-direction: row;
+/* Components */
+.command {
+  border-radius: 1em;
+  background: #111;
+  padding: 0.5em;
+  margin: 0.5em;
+  height: 5em;
+  width: 5em;
+  font-weight: bold;
 }
 
-#canvas {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+.command:active {
+  background: #222;
+}
+
+.commandIcon {
+  font-size: 2em;
+}
+
+.commandCost {
+  font-size: 0.75em;
 }
 
 #commands {
@@ -52,17 +66,6 @@ body {
   bottom: 0;
   left: 0;
   z-index: 10;
-}
-
-#counter {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, 50%);
-  z-index: 10;
-  width: 100%;
-  font-size: 1.5em;
-  text-align: center;
 }
 
 #dialogue {
@@ -76,26 +79,39 @@ body {
   padding: 0.25em;
   margin: 0;
   font-size: 2em;
-  background-color: rgba(0,0,0,0.75);
+  background-color: rgba(0, 0, 0, 0.75);
+}
+
+/* Stats */
+#counter {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  z-index: 10;
+  width: 100%;
+  font-size: 2em;
+  text-align: center;
 }
 
 #interest {
   position: fixed;
-  top: 5%;
+  top: 4.5em;
   left: 50%;
-  transform: translate(-50%, 50%);
+  transform: translate(-50%, 0);
   text-align: center;
 }
 
 #stats {
   position: fixed;
-  bottom: 4em;
+  bottom: 3em;
   left: 50%;
   transform: translate(-50%, -50%);
   font-size: 2em;
-  background: radial-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0) 75%);
+  background: radial-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0) 75%);
 }
 
+/* Mobile */
 @media only screen and (orientation: portrait) and (max-device-width: 568px) {
   body {
     font-size: 2em;
