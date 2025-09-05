@@ -1,6 +1,6 @@
 /* Base */
 body {
-  background: radial-gradient(circle 100vh, hsl(140, 50%, 50%) 0%, hsl(170, 50%, 40%) 75%);
+  background: hsl(140, 50%, 50%);
   color: white;
   font-family: 'Courier New', Courier, monospace;
   font-size: 1.5em;
@@ -90,30 +90,31 @@ canvas {
   transform: translate(-50%, 50%);
   z-index: 10;
   width: 100%;
-  font-size: 2em;
+  font-size: 1.5em;
   text-align: center;
 }
 
 #interest {
   position: fixed;
-  top: 4.5em;
+  top: 4em;
   left: 50%;
-  transform: translate(-50%, 0);
+  transform: translate(-50%, 50%);
+  font-size: 0.75em;
   text-align: center;
 }
 
 #stats {
   position: fixed;
-  bottom: 3em;
+  bottom: 4em;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 2em;
+  font-size: 1.5em;
   background: radial-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0) 75%);
 }
 
 /* Mobile */
 @media only screen and (orientation: portrait) and (max-device-width: 568px) {
   body {
-    font-size: 2em;
+    font-size: 1.25em;
   }
 }

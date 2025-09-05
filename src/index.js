@@ -109,7 +109,7 @@ const updateMagnitude = () => {
     Math.max(50 - Math.log10(S.econ.balance), 0),
     Math.max(50 - 2 * Math.log10(S.econ.balance), 10)
   ]
-  body.style.background = `radial-gradient(circle 100vh, hsl(${hue},${saturation}%,${lightness}%) 0%, hsl(${hue + 30},${saturation}%,${lightness - 10}%) 75%)`
+  body.style.background = `hsl(${hue},${saturation}%,${lightness}%)`
 
   if (Math.floor(Math.log10(S.econ.balance)) > S.meta.magnitude) {
     S.meta.magnitude = Math.floor(Math.log10(S.econ.balance))
@@ -387,6 +387,11 @@ const patCat = () => {
   if (!S.meta.mute) {
     meows[Math.floor(meows.length * Math.random())].play()
   }
+
+  // Events
+  if (S.meta.playthrough == 1 && S.econ.balance > 10**6) {
+    console.log('MEGACAT')
+  }
 }
 E.canvas.addEventListener('click', patCat)
 const interestInterval = setInterval(() => {
@@ -430,8 +435,8 @@ class Narrator {
       { predicate: 200000, line: "..." },
       { predicate: 400000, line: "Hey. Don't judge me. It's my first day!" },
       { predicate: 700000, line: "What's the worst that could possibly happen?" },
-      { predicate: 10 ** 6, line: "OH LORD WHAT IS THAT!!! IT'S A MEGACAT" },
-      { predicate: Infinity, line: "Your curiosity got you killed by cats." },
+      { predicate: 10 ** 6, line: "WHAT. IS. THAT. IT'S A MEGACAT", include: () => { return (playthrough == 1) }, },
+      { predicate: Infinity, line: "Ironically, your curiosity got us killed by cats." },
     ]
 
     const skillLines = [
@@ -484,7 +489,7 @@ class Narrator {
       }
     } else {
       const dialogLines = this.dialogLines.filter((line) => {
-        if (typeof line.predicate == 'number' && S.econ.balance > line.predicate) {
+        if (typeof line.predicate == 'number' && S.econ.balance >= line.predicate) {
           return true
         } else if (typeof line.predicate == 'function' && line.predicate()) {
           return true
@@ -515,4 +520,4 @@ S.skills.E = new GrowSkill({ key: 'E' })
 S.dialogue.narrator = new Narrator({ playthrough: S.meta.playthrough })
 
 /* ========= Debug ========= */
-// S.econ.balance = 10**5
+// S.econ.balance = 10**7
