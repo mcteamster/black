@@ -105,9 +105,9 @@ const updateHud = () => {
 const updateMagnitude = () => {
   // Background Colour
   const [hue, saturation, lightness] = [
-    Math.min(140 + 5 * Math.log10(S.econ.balance), 240),
+    Math.min(140 + 10 * Math.log10(S.econ.balance), 240),
     Math.max(50 - Math.log10(S.econ.balance), 0),
-    Math.max(50 - 2 * Math.log10(S.econ.balance), 10)
+    Math.max(50 - 3 * Math.log10(S.econ.balance), 10)
   ]
   body.style.background = `hsl(${hue},${saturation}%,${lightness}%)`
 
@@ -417,17 +417,17 @@ class Narrator {
       { predicate: 55, line: "PLEASE?" },
       { predicate: 70, line: "Okay." },
       { predicate: 85, line: "You're really doing this" },
-      { predicate: 100, line: "Look..." },
+      { predicate: 110, line: "Look..." },
       { predicate: 200, line: "I can't say I didn't warn you" },
       { predicate: 400, line: "But if you're going to commit..." },
       { predicate: 600, line: "You should do it properly." },
       { predicate: 800, line: "The better you treat them, the better they'll treat you" },
-      { predicate: 1000, line: "Give and you shall receive" },
+      { predicate: 1100, line: "Give and you shall receive" },
       { predicate: 1500, line: "It's just the way the universe works" },
       { predicate: 2000, line: "Or at least that's what I was told..." },
       { predicate: 4000, line: "We sure have a lot of cats now. Have you ever wondered where they come from?" },
       { predicate: 7000, line: "When a mommy and daddy cat love each other very much..." },
-      { predicate: 15000, line: "But really. Is this bottomless ball of cats not a mystery to you?" },
+      { predicate: 11000, line: "But really. Is this bottomless ball of cats not a mystery to you?" },
       { predicate: 20000, line: "The truth is..." },
       { predicate: 40000, line: "...something along the lines of..." },
       { predicate: 70000, line: "<i>*pages flicking*</i>" },
@@ -520,4 +520,4 @@ S.skills.E = new GrowSkill({ key: 'E' })
 S.dialogue.narrator = new Narrator({ playthrough: S.meta.playthrough })
 
 /* ========= Debug ========= */
-// S.econ.balance = 10**7
+// S.econ.balance = 10**10
