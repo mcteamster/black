@@ -182,8 +182,8 @@ class Cat {
   }
 
   resize() {
-    const size = 100 - 3 * Math.sqrt(S.canvas.cats.length) + S.meta.magnitude
-    this.size = size > 100 ? 100 : size
+    const size = 90 - 3 * Math.sqrt(S.canvas.cats.length) + S.meta.magnitude
+    this.size = size > 90 ? 90 : size
   }
 
   detectCollisions(position) {
