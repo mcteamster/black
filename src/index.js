@@ -1,24 +1,24 @@
 /* ========= Gamestate ========= */
-const S = {
+let S = {
   canvas: {
     cats: [],
     size: [window.screen.width * 1.5, window.screen.height * 1.5],
   },
-  dialogue: {
-    predicate: 0,
-    narrator: null,
-  },
   econ: {
+    auto: 0, // Auto per tick
     balance: 1, // Current Cats
     base: 1, // Cats per click
-    interest: 0, // Growth per tick
-    mult: 100, // Multiplier percentage
+    discount: 100, // Price Modifier %
+    interest: 0, // Growth % per tick
+    mult: 100, // Multiplier %
     total: 0, // Cats accumulated over all time
   },
   meta: {
+    cutscene: false,
     magnitude: 0,
     mute: false,
     playthrough: 1,
+    starttime: (new Date()).getTime(),
   },
   phys: {
     damping: 0.3,
@@ -31,19 +31,72 @@ const S = {
     W: null,
     E: null,
     R: null,
+  },
+  story: {
+    narrator: null,
+    unlocked: ['s1', 's2', 's3'],
+  },
+}
+
+const saveGame = () => {
+  console.debug('Saving Game')
+  const saveData = JSON.stringify(S)
+  localStorage.setItem('mcteamster.black.savedata', saveData)
+}
+
+const loadGame = () => {
+  const loadData = localStorage.getItem('mcteamster.black.savedata')
+  if (loadData) {
+    S = JSON.parse(loadData)
+    S.meta.starttime = (new Date()).getTime()
+  } else {
+    // TODO: Skill Selection
+    S.skills.Q = new HandsSkill({ key: 'Q' })
+    S.skills.W = new TimesSkill({ key: 'W' })
+    S.skills.E = new GrowSkill({ key: 'E' })
+    if (S.story.unlocked.includes('s13')) {
+      S.skills.R = new AutoSkill({ key: 'R' })
+    }
   }
+
+  // Restore Cats
+  if (S.canvas.cats.length == 0) {
+    S.canvas.cats.push(new Cat({ coordinates: [0, 0] })) // The first Cat is statically centered
+  } else {
+    S.canvas.cats = S.canvas.cats.map((cat) => new Cat(cat))
+  }
+
+  // Skills
+  Object.keys(S.skills).forEach(key => {
+    if (S.skills[key]?.id) {
+      S.skills[key] = skillRegister[S.skills[key].id](S.skills[key])
+    } else {
+      S.skills[key] = null
+    }
+  })
+
+  // Narrator
+  if (S.story.narrator == null) {
+    S.story.narrator = new Narrator({ playthrough: S.meta.playthrough })
+  } else {
+    S.story.narrator = new Narrator(S.story.narrator)
+  }
+
+  // UI
+  loadData && updateBalance(0);
+}
+
+const resetGame = () => {
+  console.debug('Resetting Game');
+  localStorage.removeItem('mcteamster.black.savedata');
+  location.reload() // TODO: Better way to restart?
 }
 
 /* ========= Page Setup ========= */
 // Elements
-const E = {}
-const ids = ['canvas', 'counter', 'dialogue', 'interest', 'stats', 'KeyQ', 'KeyW', 'KeyE', 'KeyR']
+const E = { body: document.body }
+const ids = ['canvas', 'counter', 'dialogue', 'interest', 'mute', 'reset', 'stats', 'KeyQ', 'KeyW', 'KeyE', 'KeyR']
 ids.forEach(id => E[id] = document.getElementById(id));
-const body = document.body;
-
-// Constants
-const blackCat = '&#x1F408;&#x200D;&#x2B1B;' // 🐈‍⬛
-const meows = Array.from({ length: 5 }, () => { return new Audio('./meow.mp3') })
 
 // Canvas
 E.canvas.width = S.canvas.size[0];
@@ -51,6 +104,11 @@ E.canvas.height = S.canvas.size[1];
 const ctx = E.canvas.getContext('2d');
 ctx.fillStyle = 'black';
 
+// Constants
+const blackCat = '&#x1F408;&#x200D;&#x2B1B;' // 🐈‍⬛
+const meows = Array.from({ length: 5 }, () => { return new Audio('./meow.mp3') })
+
+// Helpers
 const notation = (x, short) => {
   let value;
   let suffix = short ? '' : ' cats';
@@ -84,22 +142,26 @@ const notation = (x, short) => {
 
 const updateHud = () => {
   E.counter.innerHTML = `${blackCat} ${notation(S.econ.balance)}`;
-  E.interest.innerHTML = `${S.econ.interest > 0 ? '&#x1F4C8; ' + (S.econ.interest.toFixed(2)) + '% p.s' : ''}`
+  E.interest.innerHTML = `${S.econ.interest > 0 ? '&#x1F4C8; ' + (S.econ.interest.toFixed(2)) + '% ps' : ''}`
   E.stats.innerHTML = `${S.econ.base > 1 ? '&#x270B;' + notation(S.econ.base, true) : ''}${S.econ.mult > 100 ? ' &#x274E; ' + (S.econ.mult / 100).toFixed(1) : ''}`;
   ['Q', 'W', 'E', 'R'].forEach(key => {
     if (S.skills[key]) {
       const element = E[`Key${key}`]
-      if (S.econ.balance > S.skills[key].cost) {
+      if (S.econ.balance > (S.skills[key].cost  * S.econ.discount / 100)) {
         S.skills[key].enable()
       }
       element.innerHTML = `<div>
         <div class='commandIcon'>${S.skills[key].icon}</div>
         <div class='commandEffect'>${S.skills[key].effect}</div>
-        <div class='commandCost'>${notation(S.skills[key].cost, true)} ${blackCat}</div>
+        <div class='commandCost'>${S.skills[key].cost > 1 ? 
+          notation((S.skills[key].cost * S.econ.discount / 100), true)+'&nbsp;'+blackCat : 
+          S.skills[key].cost == 1 ? 'ON' : 'OFF'
+        }</div>
       </div>`
     }
   })
-  S.dialogue.narrator.nextLine();
+  E.mute.innerHTML = S.meta.mute ? '&#x1F507;' : '&#x1F509;'
+  S.story.narrator.nextLine();
 }
 
 const updateMagnitude = () => {
@@ -109,7 +171,7 @@ const updateMagnitude = () => {
     Math.max(50 - Math.log10(S.econ.balance), 0),
     Math.max(50 - 3 * Math.log10(S.econ.balance), 10)
   ]
-  body.style.background = `hsl(${hue},${saturation}%,${lightness}%)`
+  E.body.style.background = `hsl(${hue},${saturation}%,${lightness}%)`
 
   if (Math.floor(Math.log10(S.econ.balance)) > S.meta.magnitude) {
     S.meta.magnitude = Math.floor(Math.log10(S.econ.balance))
@@ -118,38 +180,40 @@ const updateMagnitude = () => {
 }
 
 const updateBalance = (cats) => {
-  // Scaling
-  if (cats == Infinity) {
-    return
-  } else if (cats > 0) {
-    S.econ.total += cats;
-  }
-  S.econ.balance += cats;
-  const unitPower = updateMagnitude();
-  updateHud();
+  if (!S.meta.cutscene) {
+    // Scaling
+    if (cats == Infinity) {
+      return
+    } else if (cats > 0) {
+      S.econ.total += cats;
+    }
+    S.econ.balance += cats;
+    const unitPower = updateMagnitude();
+    updateHud();
 
-  // Render New Cats, Remove Oldest
-  if (cats > 0) {
-    const newCats = cats / 10 ** unitPower
-    for (let i = 0; i < newCats; i++) {
-      if (S.canvas.cats.length < 1024) {
-        S.canvas.cats.push(new Cat())
-      } else {
-        S.canvas.cats.shift();
-        S.canvas.cats.push(new Cat());
+    // Render New Cats, Remove Oldest
+    if (cats > 0) {
+      const newCats = cats / 10 ** unitPower
+      for (let i = 0; i < newCats; i++) {
+        if (S.canvas.cats.length < 1024) {
+          S.canvas.cats.push(new Cat())
+        } else {
+          S.canvas.cats.shift();
+          S.canvas.cats.push(new Cat());
+        }
       }
-    }
-  } else if (cats < 0) {
-    const oldCats = S.canvas.cats.length - (S.econ.balance / 10 ** unitPower > 1024 ? 1024 : S.econ.balance / 10 ** unitPower)
-    for (let i = 0; i < oldCats; i++) {
-      if (S.canvas.cats.length > 1) {
-        S.canvas.cats.shift();
+    } else if (cats < 0) {
+      const oldCats = S.canvas.cats.length - (S.econ.balance / 10 ** unitPower > 1024 ? 1024 : S.econ.balance / 10 ** unitPower)
+      for (let i = 0; i < oldCats; i++) {
+        if (S.canvas.cats.length > 1) {
+          S.canvas.cats.shift();
+        }
       }
-    }
-    if (oldCats == 0) {
-      S.canvas.cats.forEach(cat => {
-        cat.updateVelocity([cat.velocity[0] + cat.size * (Math.random() - 0.5), cat.velocity[1] + cat.size * (Math.random() - 0.5)])
-      })
+      if (oldCats == 0) {
+        S.canvas.cats.forEach(cat => {
+          cat.updateVelocity([cat.velocity[0] + cat.size * (Math.random() - 0.5), cat.velocity[1] + cat.size * (Math.random() - 0.5)])
+        })
+      }
     }
   }
 }
@@ -157,10 +221,10 @@ const updateBalance = (cats) => {
 /* ========= Physics ========= */
 class Cat {
   constructor(props) {
-    this.id = S.econ.total;
-    this.orientation = 0;
-    this.rotation = 0;
-    this.velocity = [0, 0];
+    this.id = props?.id || S.econ.total;
+    this.orientation = props?.orientation || 0;
+    this.rotation = props?.rotation || 0;
+    this.velocity = props?.velocity || [0, 0];
     if (props?.coordinates) {
       this.coordinates = props.coordinates
     } else {
@@ -261,13 +325,16 @@ class Skill {
   constructor(props) {
     this.cost = props.cost
     this.effect = props.effect
-    this.enabled = false
     this.icon = props.icon
     this.id = props.id
     this.key = props.key
     this.label = props.label
-    this.level = 0
+    this.level = props?.level || 0
     this.assign()
+    this.enabled = props?.enabled || false
+    if (this.enabled) {
+      this.enable()
+    }
   }
 
   assign() {
@@ -278,9 +345,9 @@ class Skill {
   }
 
   buy() {
-    if (this.enabled && S.econ.balance > this.cost) {
+    if (this.enabled && S.econ.balance > (this.cost * S.econ.discount / 100 )) {
       this.level++
-      updateBalance(-this.cost)
+      updateBalance(-(this.cost * S.econ.discount / 100))
       return true
     }
   }
@@ -298,17 +365,17 @@ class HandsSkill extends Skill {
   constructor(props) {
     super({
       id: 's1',
-      cost: 100,
+      cost: 110,
       effect: '+1',
       icon: '&#x270B;',
-      key: props.key,
       label: 'Hands',
+      ...props,
     })
   }
 
   use() {
     if (this.buy()) {
-      this.cost = 100 + 10 * this.level // Linear
+      this.cost = 110 + 10 * this.level // Linear
       S.econ.base++
       updateBalance(0)
     }
@@ -323,8 +390,8 @@ class TimesSkill extends Skill {
       cost: 1000,
       effect: '+0.1x',
       icon: '&#x274E;',
-      key: props.key,
       label: 'Times',
+      ...props,
     })
   }
 
@@ -345,8 +412,8 @@ class GrowSkill extends Skill {
       cost: 10000,
       effect: '+0.01%',
       icon: '&#x1F4C8;',
-      key: props.key,
       label: 'Grow',
+      ...props,
     })
   }
 
@@ -359,53 +426,57 @@ class GrowSkill extends Skill {
   }
 }
 
+// #13 - Auto: Clicks per second
+class AutoSkill extends Skill {
+  constructor(props) {
+    super({
+      id: 's13',
+      cost: 0,
+      effect: `Auto`,
+      icon: '&#x2699;&#xFE0F;',
+      label: 'Auto',
+      ...props,
+    })
+  }
 
-/* ========= Services ========= */
-// Rendering
-const renderFrame = () => {
-  ctx.clearRect(0, 0, ...S.canvas.size);
-  S.canvas.cats.forEach(cat => {
-    cat.render();
-  })
-}
-setInterval(renderFrame, 50) // 20 FPS
-
-// Hotkeys
-const hotkeydown = (event) => {
-  if (['KeyQ', 'KeyW', 'KeyE', 'KeyR'].includes(event.code)) {
-    document.getElementById(event.code).click()
-  } else if (event.code === 'Space' || event.key === ' ') {
-    patCat();
+  use() {
+    if (this.cost == 1) {
+      this.cost = 0
+      S.econ.auto = 0
+    } else {
+      this.cost = 1
+      S.econ.auto = S.story.unlocked.length
+    }
+    updateBalance(0)
   }
 }
-document.addEventListener('keydown', hotkeydown, false);
 
-// Economy
-const patCat = () => {
-  updateBalance(S.econ.base * S.econ.mult / 100)
-  // Trigger Meow Sound Here
-  if (!S.meta.mute) {
-    meows[Math.floor(meows.length * Math.random())].play()
-  }
-
-  // Events
-  if (S.meta.playthrough == 1 && S.econ.balance > 10**6) {
-    console.log('MEGACAT')
-  }
+const skillRegister = {
+  's1': (props) => { return new HandsSkill(props) },
+  's2': (props) => { return new TimesSkill(props) },
+  's3': (props) => { return new GrowSkill(props) },
+  // 's4': (props) => { return new AutoSkill(props) },
+  // 's5': (props) => { return new HandsSkill(props) },
+  // 's6': (props) => { return new HandsSkill(props) },
+  // 's7': (props) => { return new HandsSkill(props) },
+  // 's8': (props) => { return new HandsSkill(props) },
+  // 's9': (props) => { return new HandsSkill(props) },
+  // 's10': (props) => { return new HandsSkill(props) },
+  // 's11': (props) => { return new HandsSkill(props) },
+  // 's12': (props) => { return new HandsSkill(props) },
+  's13': (props) => { return new AutoSkill(props) },
 }
-E.canvas.addEventListener('click', patCat)
-const interestInterval = setInterval(() => {
-  if (S.econ.interest > 0) {
-    updateBalance(Math.floor(S.econ.balance * S.econ.interest / 100))
-  }
-}, 1000)
 
 /* ========= Dialogue ========= */
 class Narrator {
   constructor(props) {
-    this.currentLine = '';
+    this.currentLine = props?.currentLine || '';
     this.playthrough = props.playthrough;
-    this.loadLines(this.playthrough);
+    this.dialogLines = props?.dialogLines;
+    this.skillLines = props?.skillLines;
+    if (!this.dialogLines && !this.skillLines) {
+      this.loadLines(this.playthrough);
+    }
   }
 
   loadLines(playthrough) {
@@ -512,12 +583,126 @@ class Narrator {
   }
 }
 
+/* ========= Story Events ========= */
+const storyAutocat = () => {
+  console.info("You did not the cat.")
+  S.meta.cutscene = true;
+  S.canvas.cats = [];
+  S.story.narrator.sayLine('You did not the cat')
+  setTimeout(() => {
+    if (!S.story.unlocked.includes('s13')) {
+      S.story.narrator.sayLine('Thank you!')
+      S.story.unlocked.push('s13'); // Unlock the Autocat
+      setTimeout(() => {
+        endPlaythrough();
+      }, 3000)
+    }
+  }, 3000)
+}
+
+const storyMegacat = () => {
+  // TODO: Megacat Story
+}
+
+const endPlaythrough = () => {
+  S.canvas.cats = []
+  S.econ = {
+    auto: 0, // Auto per tick
+    balance: 1, // Current Cats
+    base: 1, // Cats per click
+    discount: 100, // Price Modifier %
+    interest: 0, // Growth % per tick
+    mult: 100, // Multiplier %
+    total: 0, // Cats accumulated over all time
+  }
+  S.meta.cutscene = false
+  S.meta.playthrough += 1
+  saveGame()
+  loadGame()
+}
+
+/* ========= Services ========= */
+// Rendering
+const renderFrame = () => {
+  ctx.clearRect(0, 0, ...S.canvas.size);
+  S.canvas.cats.forEach(cat => {
+    cat.render();
+  })
+}
+setInterval(renderFrame, 50) // 20 FPS
+
+// Economy
+const patCat = () => {
+  updateBalance(S.econ.base * S.econ.mult / 100)
+  // Trigger Meow Sound Here
+  if (!S.meta.mute) {
+    meows[Math.floor(meows.length * Math.random())].play()
+  }
+}
+E.canvas.addEventListener('click', patCat)
+
+// Ticks
+const tickInterval = setInterval(() => {
+  const elapsedTime = (new Date().getTime() - S.meta.starttime);
+
+  // Save
+  if ((elapsedTime % 10000) < 1000) {
+    saveGame()
+  } 
+
+  // Econ
+  if (S.econ.interest > 0) {
+    updateBalance(Math.floor(S.econ.balance * S.econ.interest / 100))
+  }
+
+  if (S.econ.auto > 0) {
+    for (let i = 0; i < S.econ.auto; i++) {
+      setTimeout(() => {
+        patCat()
+      }, 50*i)
+    }
+  }
+
+  // Story Events
+  if (!S.story.unlocked.includes('s4')) {
+    if (S.econ.balance > 10**6) {
+      storyMegacat()
+    }
+  }
+  if (!S.story.unlocked.includes('s13')) {
+    if (S.econ.balance == 1 && elapsedTime > 10000) {
+      storyAutocat()
+    }
+  }
+}, 1000)
+
+/* ========= Buttons ========= */
+// Menu Buttons
+E.reset.addEventListener('click', (event) => {
+  if (confirm("Clear Saved Data?") == true) {
+    resetGame();
+  }
+})
+E.mute.addEventListener('click', (event) => { 
+  console.log('Toggling Mute'); 
+  S.meta.mute = !S.meta.mute; 
+  updateHud();
+  event.stopPropagation()
+})
+
+// Hotkeys
+const hotkeydown = (event) => {
+  if (['KeyQ', 'KeyW', 'KeyE', 'KeyR'].includes(event.code)) {
+    document.getElementById(event.code).click()
+  } else if (event.code === 'Space' || event.key === ' ') {
+    patCat();
+  }
+}
+document.addEventListener('keydown', hotkeydown, false);
+
 /* ========= Init ========= */
-S.canvas.cats.push(new Cat({ coordinates: [0, 0] })) // The first Cat is statically centered
-S.skills.Q = new HandsSkill({ key: 'Q' })
-S.skills.W = new TimesSkill({ key: 'W' })
-S.skills.E = new GrowSkill({ key: 'E' })
-S.dialogue.narrator = new Narrator({ playthrough: S.meta.playthrough })
+loadGame()
 
 /* ========= Debug ========= */
-// S.econ.balance = 10**10
+// S.econ.balance = 10000
+// S.econ.discount = 50

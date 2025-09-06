@@ -41,8 +41,8 @@ canvas {
 .command {
   border-radius: 1em;
   background: #111;
-  padding: 0.5em;
-  margin: 0.5em;
+  padding: 0.5em 0.25em;
+  margin: 0.5em 0.25em;
   height: 5em;
   width: 5em;
   font-weight: bold;
@@ -110,6 +110,23 @@ canvas {
   transform: translate(-50%, -50%);
   font-size: 1.5em;
   background: radial-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0) 75%);
+}
+
+/* Menu */
+#mute {
+  position: fixed;
+  top: 0;
+  right: 0;
+  transform: translate(-50%, 50%);
+  z-index: 20;
+}
+
+#reset {
+  position: fixed;
+  top: 0;
+  left: 0;
+  transform: translate(50%, 50%);
+  z-index: 20;
 }
 
 /* Mobile */
