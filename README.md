@@ -1,3 +1,7 @@
-# Black Cat - JS13K 2025
+# please DO NOT the cat
+Submission for JS13K 2025: Black Cat
 
-Please do not the cat.
+https://js13kgames.com/2025/
+
+## About
+*Please do not the cat* is a text-based, roguelike, idle/clicker game.

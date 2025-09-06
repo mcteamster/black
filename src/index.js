@@ -54,9 +54,7 @@ const loadGame = () => {
     S.skills.Q = new HandsSkill({ key: 'Q' })
     S.skills.W = new TimesSkill({ key: 'W' })
     S.skills.E = new GrowSkill({ key: 'E' })
-    if (S.story.unlocked.includes('s13')) {
-      S.skills.R = new AutoSkill({ key: 'R' })
-    }
+    S.skills.R = new AutoSkill({ key: 'R' })
   }
 
   // Restore Cats
@@ -368,7 +366,7 @@ class HandsSkill extends Skill {
       cost: 110,
       effect: '+1',
       icon: '&#x270B;',
-      label: 'Hands',
+      label: 'Hands: Increase the base number of cats per click.',
       ...props,
     })
   }
@@ -390,7 +388,7 @@ class TimesSkill extends Skill {
       cost: 1000,
       effect: '+0.1x',
       icon: '&#x274E;',
-      label: 'Times',
+      label: 'Times: Increase the multiplier for cats per click.',
       ...props,
     })
   }
@@ -412,7 +410,7 @@ class GrowSkill extends Skill {
       cost: 10000,
       effect: '+0.01%',
       icon: '&#x1F4C8;',
-      label: 'Grow',
+      label: 'Grow: Increase the interest rate of the current cat balance',
       ...props,
     })
   }
@@ -434,7 +432,7 @@ class AutoSkill extends Skill {
       cost: 0,
       effect: `Auto`,
       icon: '&#x2699;&#xFE0F;',
-      label: 'Auto',
+      label: 'Auto: Toggle automatic clicks per second - equal to the number of unlocked skills.',
       ...props,
     })
   }
@@ -488,7 +486,7 @@ class Narrator {
       { predicate: 55, line: "PLEASE?" },
       { predicate: 70, line: "Okay." },
       { predicate: 85, line: "You're really doing this" },
-      { predicate: 110, line: "Look..." },
+      { predicate: 120, line: "Look..." },
       { predicate: 200, line: "I can't say I didn't warn you" },
       { predicate: 400, line: "But if you're going to commit..." },
       { predicate: 600, line: "You should do it properly." },
@@ -646,7 +644,7 @@ const tickInterval = setInterval(() => {
   const elapsedTime = (new Date().getTime() - S.meta.starttime);
 
   // Save
-  if ((elapsedTime % 10000) < 1000) {
+  if ((elapsedTime % 30000) < 1000) {
     saveGame()
   } 
 
