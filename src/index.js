@@ -107,7 +107,7 @@ const resetGame = () => {
   console.debug('Resetting Game');
   localStorage.removeItem('mcteamster.black.savedata');
   onbeforeunload = undefined;
-  location.reload() // TODO: Better way to restart?
+  location.reload();
 }
 
 /* ========= Page Setup ========= */
@@ -434,6 +434,11 @@ class HandsSkill extends Skill {
       this.cost = 110 + 10 * this.level // Linear
       S.econ.base++
       updateBalance(0)
+
+      // Unlock upgraded skill
+      if (this.level >= 10000 && !S.story.unlocked.includes('s4')) {
+        S.story.unlocked.push('s4')
+      }
     }
   }
 }
@@ -453,6 +458,11 @@ class TimesSkill extends Skill {
       this.cost = 1000 + 10 * ((this.level) ** 2) // Parabolic
       S.econ.mult += 10
       updateBalance(0)
+
+      // Unlock upgraded skill
+      if (this.level >= 1000 && !S.story.unlocked.includes('s5')) {
+        S.story.unlocked.push('s5')
+      }
     }
   }
 }
@@ -472,6 +482,11 @@ class GrowSkill extends Skill {
       this.cost = 10 ** (4 + this.level / 10) // Exponential
       S.econ.interest += 0.01
       updateBalance(0)
+
+      // Unlock upgraded skill
+      if (this.level >= 100 && !S.story.unlocked.includes('s6')) {
+        S.story.unlocked.push('s6')
+      }
     }
   }
 }
@@ -636,6 +651,7 @@ class Narrator {
       { predicate: Infinity, line: "Ironically, your curiosity got us killed by cats." },
     ]
 
+    // TODO: Rework this
     const skillLines = [
       {
         predicate: () => { return (S.skills.bindings.Q?.level == 0 && S.econ.balance > S.skills.bindings.Q?.cost) },
@@ -795,7 +811,7 @@ const tickInterval = setInterval(() => {
 
   // Story Events
   if (S.meta.active) {
-    if (!S.story.unlocked.includes('s4')) {
+    if (!S.story.unlocked.includes('s7')) {
       if (S.econ.balance > 10 ** 6) {
         storyMegacat()
       }
