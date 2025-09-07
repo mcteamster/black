@@ -14,6 +14,7 @@ let S = {
     total: 0, // Cats accumulated over all time
   },
   meta: {
+    active: true,
     cutscene: false,
     magnitude: 0,
     mute: false,
@@ -27,10 +28,13 @@ let S = {
     overlap: 0.25,
   },
   skills: {
-    Q: null,
-    W: null,
-    E: null,
-    R: null,
+    bindings: {
+      Q: null,
+      W: null,
+      E: null,
+      R: null,
+    },
+    selected: ['s1', 's2', 's3'],
   },
   story: {
     narrator: null,
@@ -38,62 +42,83 @@ let S = {
   },
 }
 
+const startGame = () => {
+  E.launch.classList.add('hidden');
+  S.meta.active = true;
+  S.meta.starttime = (new Date()).getTime()
+
+  // First Cat
+  S.canvas.cats.push(new Cat({ coordinates: [0, 0] }))
+
+  // Apply Skill Selection
+  S.skills.selected = S.skills.selected.sort((a, b) => { return (a.substring(1) - b.substring(1)) }) // sort in alphnumeric order
+  S.skills.bindings.Q = S.skills.selected[0] ? skillRegister[S.skills.selected[0]].generator({ key: 'Q' }) : null
+  S.skills.bindings.W = S.skills.selected[1] ? skillRegister[S.skills.selected[1]].generator({ key: 'W' }) : null
+  S.skills.bindings.E = S.skills.selected[2] ? skillRegister[S.skills.selected[2]].generator({ key: 'E' }) : null
+  S.skills.bindings.R = S.skills.selected[3] ? skillRegister[S.skills.selected[3]].generator({ key: 'R' }) : null
+
+  // Narrator
+  S.story.narrator = new Narrator({ playthrough: S.meta.playthrough })
+
+  // UI
+  updateBalance(0);
+}
+
 const saveGame = () => {
   console.debug('Saving Game')
   const saveData = JSON.stringify(S)
   localStorage.setItem('mcteamster.black.savedata', saveData)
 }
+onbeforeunload = saveGame
 
 const loadGame = () => {
   const loadData = localStorage.getItem('mcteamster.black.savedata')
   if (loadData) {
     S = JSON.parse(loadData)
-    S.meta.starttime = (new Date()).getTime()
-  } else {
-    // TODO: Skill Selection
-    S.skills.Q = new HandsSkill({ key: 'Q' })
-    S.skills.W = new TimesSkill({ key: 'W' })
-    S.skills.E = new GrowSkill({ key: 'E' })
-    S.skills.R = new AutoSkill({ key: 'R' })
-  }
 
-  // Restore Cats
-  if (S.canvas.cats.length == 0) {
-    S.canvas.cats.push(new Cat({ coordinates: [0, 0] })) // The first Cat is statically centered
-  } else {
+    // Restore Cats
+    S.canvas.size = [window.screen.width * 1.5, window.screen.height * 1.5]
     S.canvas.cats = S.canvas.cats.map((cat) => new Cat(cat))
-  }
 
-  // Skills
-  Object.keys(S.skills).forEach(key => {
-    if (S.skills[key]?.id) {
-      S.skills[key] = skillRegister[S.skills[key].id](S.skills[key])
-    } else {
-      S.skills[key] = null
-    }
-  })
+    // Skills
+    Object.keys(S.skills.bindings).forEach(key => {
+      if (S.skills.bindings[key]?.id) {
+        S.skills.bindings[key] = skillRegister[S.skills.bindings[key].id].generator(S.skills.bindings[key])
+      } else {
+        S.skills.bindings[key] = null
+      }
+    })
 
-  // Narrator
-  if (S.story.narrator == null) {
-    S.story.narrator = new Narrator({ playthrough: S.meta.playthrough })
-  } else {
+    // Narrator
     S.story.narrator = new Narrator(S.story.narrator)
-  }
 
-  // UI
-  loadData && updateBalance(0);
+    // UI
+    updateBalance(0);
+    if (!S.meta.active) {
+      updateLauncher()
+    }
+    return true
+  } else {
+    return false
+  }
 }
 
 const resetGame = () => {
   console.debug('Resetting Game');
   localStorage.removeItem('mcteamster.black.savedata');
+  onbeforeunload = undefined;
   location.reload() // TODO: Better way to restart?
 }
 
 /* ========= Page Setup ========= */
 // Elements
 const E = { body: document.body }
-const ids = ['canvas', 'counter', 'dialogue', 'interest', 'mute', 'reset', 'stats', 'KeyQ', 'KeyW', 'KeyE', 'KeyR']
+const ids = [
+  'canvas', 'counter', 'dialogue', 'interest',
+  'mute', 'reset', 'stats',
+  'launch', 'instructions', 'picker', 'start',
+  'KeyQ', 'KeyW', 'KeyE', 'KeyR'
+]
 ids.forEach(id => E[id] = document.getElementById(id));
 
 // Canvas
@@ -139,27 +164,63 @@ const notation = (x, short) => {
 }
 
 const updateHud = () => {
-  E.counter.innerHTML = `${blackCat} ${notation(S.econ.balance)}`;
+  E.counter.innerHTML = (S.meta.playthrough == 1 && S.econ.balance == 1) ? '' : `${blackCat} ${notation(S.econ.balance)}`;
   E.interest.innerHTML = `${S.econ.interest > 0 ? '&#x1F4C8; ' + (S.econ.interest.toFixed(2)) + '% ps' : ''}`
   E.stats.innerHTML = `${S.econ.base > 1 ? '&#x270B;' + notation(S.econ.base, true) : ''}${S.econ.mult > 100 ? ' &#x274E; ' + (S.econ.mult / 100).toFixed(1) : ''}`;
   ['Q', 'W', 'E', 'R'].forEach(key => {
-    if (S.skills[key]) {
+    if (S.skills.bindings[key]) {
       const element = E[`Key${key}`]
-      if (S.econ.balance > (S.skills[key].cost  * S.econ.discount / 100)) {
-        S.skills[key].enable()
+      if (S.econ.balance > (S.skills.bindings[key].cost * S.econ.discount / 100)) {
+        S.skills.bindings[key].enable()
       }
       element.innerHTML = `<div>
-        <div class='commandIcon'>${S.skills[key].icon}</div>
-        <div class='commandEffect'>${S.skills[key].effect}</div>
-        <div class='commandCost'>${S.skills[key].cost > 1 ? 
-          notation((S.skills[key].cost * S.econ.discount / 100), true)+'&nbsp;'+blackCat : 
-          S.skills[key].cost == 1 ? 'ON' : 'OFF'
+        <div class='commandIcon'>${S.skills.bindings[key].icon}</div>
+        <div class='commandEffect'>${S.skills.bindings[key].effect}</div>
+        <div class='commandCost'>${S.skills.bindings[key].cost > 1 ?
+          notation((S.skills.bindings[key].cost * S.econ.discount / 100), true) + '&nbsp;' + blackCat :
+          S.skills.bindings[key].cost == 1 ? 'ON' : 'OFF'
         }</div>
       </div>`
     }
   })
   E.mute.innerHTML = S.meta.mute ? '&#x1F507;' : '&#x1F509;'
   S.story.narrator.nextLine();
+}
+
+const updateLauncher = () => {
+  E.launch.classList.remove('hidden')
+  E.instructions.innerHTML = `
+    <div>Game #${S.meta.playthrough}</div>
+    <div>Select Skills</div>
+  `
+  let pickerContent = ""
+  Object.keys(skillRegister).forEach((skill) => {
+    if (S.story.unlocked.includes(skill)) {
+      pickerContent += `<div id="${skill}" 
+        class="command centered column ${S.skills.selected.includes(skill) && 'selected'}" 
+        title="${skillRegister[skill].label}"
+        onClick="
+          if (S.skills.selected.includes(this.id)) {
+            S.skills.selected = S.skills.selected.filter((skill) => skill != this.id)
+          } else {
+            S.skills.selected.push(this.id);
+            if (S.skills.selected.length > 4) {
+              S.skills.selected = S.skills.selected.slice(-4);
+            }
+          }
+          updateLauncher();
+        ">
+        <div class="commandIcon">${skillRegister[skill].icon}</div>
+        <div>${skillRegister[skill].name}</div>
+      </div>`
+    } else {
+      pickerContent += `<div id="${skill}" class="command centered column" title="Play to Unlock">
+        <div class="commandIcon">?</div>
+      </div>`
+    }
+  })
+  E.picker.innerHTML = pickerContent
+  E.start.addEventListener('click', startGame)
 }
 
 const updateMagnitude = () => {
@@ -178,7 +239,7 @@ const updateMagnitude = () => {
 }
 
 const updateBalance = (cats) => {
-  if (!S.meta.cutscene) {
+  if (S.meta.active && !S.meta.cutscene) {
     // Scaling
     if (cats == Infinity) {
       return
@@ -321,12 +382,12 @@ class Cat {
 /* ========= Skills ========= */
 class Skill {
   constructor(props) {
-    this.cost = props.cost
-    this.effect = props.effect
-    this.icon = props.icon
     this.id = props.id
+    this.effect = skillRegister[this.id].effect
+    this.icon = skillRegister[this.id].icon
+    this.label = skillRegister[this.id].label
+    this.cost = props.cost
     this.key = props.key
-    this.label = props.label
     this.level = props?.level || 0
     this.assign()
     this.enabled = props?.enabled || false
@@ -343,7 +404,7 @@ class Skill {
   }
 
   buy() {
-    if (this.enabled && S.econ.balance > (this.cost * S.econ.discount / 100 )) {
+    if (this.enabled && S.econ.balance > (this.cost * S.econ.discount / 100)) {
       this.level++
       updateBalance(-(this.cost * S.econ.discount / 100))
       return true
@@ -364,9 +425,6 @@ class HandsSkill extends Skill {
     super({
       id: 's1',
       cost: 110,
-      effect: '+1',
-      icon: '&#x270B;',
-      label: 'Hands: Increase the base number of cats per click.',
       ...props,
     })
   }
@@ -386,9 +444,6 @@ class TimesSkill extends Skill {
     super({
       id: 's2',
       cost: 1000,
-      effect: '+0.1x',
-      icon: '&#x274E;',
-      label: 'Times: Increase the multiplier for cats per click.',
       ...props,
     })
   }
@@ -408,9 +463,6 @@ class GrowSkill extends Skill {
     super({
       id: 's3',
       cost: 10000,
-      effect: '+0.01%',
-      icon: '&#x1F4C8;',
-      label: 'Grow: Increase the interest rate of the current cat balance',
       ...props,
     })
   }
@@ -430,9 +482,6 @@ class AutoSkill extends Skill {
     super({
       id: 's13',
       cost: 0,
-      effect: `Auto`,
-      icon: '&#x2699;&#xFE0F;',
-      label: 'Auto: Toggle automatic clicks per second - equal to the number of unlocked skills.',
       ...props,
     })
   }
@@ -449,20 +498,99 @@ class AutoSkill extends Skill {
   }
 }
 
+// Register Skill metadata
 const skillRegister = {
-  's1': (props) => { return new HandsSkill(props) },
-  's2': (props) => { return new TimesSkill(props) },
-  's3': (props) => { return new GrowSkill(props) },
-  // 's4': (props) => { return new AutoSkill(props) },
-  // 's5': (props) => { return new HandsSkill(props) },
-  // 's6': (props) => { return new HandsSkill(props) },
-  // 's7': (props) => { return new HandsSkill(props) },
-  // 's8': (props) => { return new HandsSkill(props) },
-  // 's9': (props) => { return new HandsSkill(props) },
-  // 's10': (props) => { return new HandsSkill(props) },
-  // 's11': (props) => { return new HandsSkill(props) },
-  // 's12': (props) => { return new HandsSkill(props) },
-  's13': (props) => { return new AutoSkill(props) },
+  s1: {
+    generator: (props) => { return new HandsSkill(props) },
+    name: 'Hands',
+    icon: '&#x270B;',
+    effect: '+1',
+    label: 'Hands: Increase the base number of cats per click.',
+  },
+  s2: {
+    generator: (props) => { return new TimesSkill(props) },
+    name: 'Times',
+    icon: '&#x274E;',
+    effect: '+0.1x',
+    label: 'Times: Increase the multiplier for cats per click.',
+  },
+  s3: {
+    generator: (props) => { return new GrowSkill(props) },
+    name: 'Grow',
+    icon: '&#x1F4C8;',
+    effect: '+0.01%',
+    label: 'Grow: Increase the interest rate of the current cat balance',
+  },
+  s4: {
+    generator: (props) => { return new GrowSkill(props) },
+    name: '',
+    icon: '',
+    effect: '',
+    label: '',
+  },
+  s5: {
+    generator: (props) => { return new GrowSkill(props) },
+    name: '',
+    icon: '',
+    effect: '',
+    label: '',
+  },
+  s6: {
+    generator: (props) => { return new GrowSkill(props) },
+    name: '',
+    icon: '',
+    effect: '',
+    label: '',
+  },
+  s7: {
+    generator: (props) => { return new GrowSkill(props) },
+    name: '',
+    icon: '',
+    effect: '',
+    label: '',
+  },
+  s8: {
+    generator: (props) => { return new GrowSkill(props) },
+    name: '',
+    icon: '',
+    effect: '',
+    label: '',
+  },
+  s9: {
+    generator: (props) => { return new GrowSkill(props) },
+    name: '',
+    icon: '',
+    effect: '',
+    label: '',
+  },
+  s10: {
+    generator: (props) => { return new GrowSkill(props) },
+    name: '',
+    icon: '',
+    effect: '',
+    label: '',
+  },
+  s11: {
+    generator: (props) => { return new GrowSkill(props) },
+    name: '',
+    icon: '',
+    effect: '',
+    label: '',
+  },
+  s12: {
+    generator: (props) => { return new GrowSkill(props) },
+    name: '',
+    icon: '',
+    effect: '',
+    label: '',
+  },
+  s13: {
+    generator: (props) => { return new AutoSkill(props) },
+    name: 'Auto',
+    icon: '&#x2699;&#xFE0F;',
+    effect: `Auto`,
+    label: 'Auto: Toggle automatic clicks per second - equal to the number of unlocked skills.',
+  },
 }
 
 /* ========= Dialogue ========= */
@@ -510,24 +638,24 @@ class Narrator {
 
     const skillLines = [
       {
-        predicate: () => { return (S.skills.Q?.level == 0 && S.econ.balance > S.skills.Q?.cost) },
+        predicate: () => { return (S.skills.bindings.Q?.level == 0 && S.econ.balance > S.skills.bindings.Q?.cost) },
         line: `I'll find someone to take them off your HANDS`,
-        include: () => { return (S.skills.Q?.id == 's1') },
+        include: () => { return (S.skills.bindings.Q?.id == 's1') },
       },
       {
-        predicate: () => { return (S.skills.Q?.level == 1 && S.econ.balance < (S.skills.Q?.cost)) },
+        predicate: () => { return (S.skills.bindings.Q?.level == 1 && S.econ.balance < (S.skills.bindings.Q?.cost)) },
         line: `OH NO. THIS IS WORSE!`,
-        include: () => { return (S.skills.Q?.id == 's1') },
+        include: () => { return (S.skills.bindings.Q?.id == 's1') },
       },
       {
-        predicate: () => { return (S.skills.W?.level == 0 && S.econ.balance > S.skills.W?.cost) },
+        predicate: () => { return (S.skills.bindings.W?.level == 0 && S.econ.balance > S.skills.bindings.W?.cost) },
         line: `They'll go out and tell others about the good TIMES`,
-        include: () => { return (S.skills.W?.id == 's2') },
+        include: () => { return (S.skills.bindings.W?.id == 's2') },
       },
       {
-        predicate: () => { return (S.skills.E?.level == 0 && S.econ.balance > S.skills.E?.cost) },
+        predicate: () => { return (S.skills.bindings.E?.level == 0 && S.econ.balance > S.skills.bindings.E?.cost) },
         line: `They want to have kittens! Maybe we should give them space to GROW?`,
-        include: () => { return (S.skills.E?.id == 's3') },
+        include: () => { return (S.skills.bindings.E?.id == 's3') },
       },
     ]
 
@@ -583,16 +711,19 @@ class Narrator {
 
 /* ========= Story Events ========= */
 const storyAutocat = () => {
-  console.info("You did not the cat.")
+  console.info("Achievement: You did not the cat.")
   S.meta.cutscene = true;
   S.canvas.cats = [];
   S.story.narrator.sayLine('You did not the cat')
   setTimeout(() => {
     if (!S.story.unlocked.includes('s13')) {
-      S.story.narrator.sayLine('Thank you!')
-      S.story.unlocked.push('s13'); // Unlock the Autocat
+      S.story.unlocked.push('s13'); // Unlock the Auto Skill
+      S.story.narrator.sayLine('Thank you for listening!!')
       setTimeout(() => {
-        endPlaythrough();
+        S.story.narrator.sayLine('<i>You have unlocked the Auto skill</i>')
+        setTimeout(() => {
+          endPlaythrough();
+        }, 3000)
       }, 3000)
     }
   }, 3000)
@@ -603,6 +734,7 @@ const storyMegacat = () => {
 }
 
 const endPlaythrough = () => {
+  // Reset
   S.canvas.cats = []
   S.econ = {
     auto: 0, // Auto per tick
@@ -614,9 +746,9 @@ const endPlaythrough = () => {
     total: 0, // Cats accumulated over all time
   }
   S.meta.cutscene = false
+  S.meta.active = false
   S.meta.playthrough += 1
   saveGame()
-  loadGame()
 }
 
 /* ========= Services ========= */
@@ -644,9 +776,9 @@ const tickInterval = setInterval(() => {
   const elapsedTime = (new Date().getTime() - S.meta.starttime);
 
   // Save
-  if ((elapsedTime % 30000) < 1000) {
+  if ((elapsedTime % 60000) < 1000) {
     saveGame()
-  } 
+  }
 
   // Econ
   if (S.econ.interest > 0) {
@@ -657,20 +789,24 @@ const tickInterval = setInterval(() => {
     for (let i = 0; i < S.econ.auto; i++) {
       setTimeout(() => {
         patCat()
-      }, 50*i)
+      }, 50 * i)
     }
   }
 
   // Story Events
-  if (!S.story.unlocked.includes('s4')) {
-    if (S.econ.balance > 10**6) {
-      storyMegacat()
+  if (S.meta.active) {
+    if (!S.story.unlocked.includes('s4')) {
+      if (S.econ.balance > 10 ** 6) {
+        storyMegacat()
+      }
     }
-  }
-  if (!S.story.unlocked.includes('s13')) {
-    if (S.econ.balance == 1 && elapsedTime > 10000) {
-      storyAutocat()
+    if (!S.story.unlocked.includes('s13')) {
+      if (S.econ.balance == 1 && elapsedTime > 10000) {
+        storyAutocat()
+      }
     }
+  } else {
+    updateLauncher()
   }
 }, 1000)
 
@@ -679,27 +815,31 @@ const tickInterval = setInterval(() => {
 E.reset.addEventListener('click', (event) => {
   if (confirm("Clear Saved Data?") == true) {
     resetGame();
+  } else if (confirm("End Current Playthrough?") == true) {
+    endPlaythrough();
   }
 })
-E.mute.addEventListener('click', (event) => { 
-  console.log('Toggling Mute'); 
-  S.meta.mute = !S.meta.mute; 
+E.mute.addEventListener('click', (event) => {
+  console.log('Toggling Mute');
+  S.meta.mute = !S.meta.mute;
   updateHud();
   event.stopPropagation()
 })
 
 // Hotkeys
 const hotkeydown = (event) => {
-  if (['KeyQ', 'KeyW', 'KeyE', 'KeyR'].includes(event.code)) {
-    document.getElementById(event.code).click()
-  } else if (event.code === 'Space' || event.key === ' ') {
-    patCat();
+  if (S.meta.active) {
+    if (['KeyQ', 'KeyW', 'KeyE', 'KeyR'].includes(event.code)) {
+      document.getElementById(event.code).click()
+    } else if (event.code === 'Space' || event.key === ' ') {
+      patCat();
+    }
   }
 }
 document.addEventListener('keydown', hotkeydown, false);
 
 /* ========= Init ========= */
-loadGame()
+loadGame() || startGame()
 
 /* ========= Debug ========= */
 // S.econ.balance = 10000
