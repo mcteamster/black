@@ -8,9 +8,19 @@
   <body>
     <canvas id="canvas"></canvas>
     <div id="root">
-      <div id="menu">
+      <div id="buttons">
+        <div id="pause">&#x23F8;&#xFE0F;</div>
         <div id="mute"></div>
-        <div id="reset">&#x1F504;</div>
+        <div id="menu" class="centered column overlay hidden">
+          <div id="restart" class="command centered column">
+            <div class="commandIcon">&#x1F504;</div>
+            <div>New Game</div>
+          </div>
+          <div id="clear" class="command centered column">
+            <div class="commandIcon">&#x1F5D1;&#xFE0F;</div>
+            <div>Clear All</div>
+          </div>
+        </div>
       </div>
       <div id="stats" class="centered row"></div>
       <div id="counter"></div>
@@ -19,10 +29,10 @@
         please DO NOT the cat
       </div>
       <div id="commands" class="centered row">
-        <div id="KeyQ" class="command centered hidden">Q</div>
-        <div id="KeyW" class="command centered hidden">W</div>
-        <div id="KeyE" class="command centered hidden">E</div>
-        <div id="KeyR" class="command centered hidden">R</div>
+        <div id="KeyQ" class="command centered">Q</div>
+        <div id="KeyW" class="command centered">W</div>
+        <div id="KeyE" class="command centered">E</div>
+        <div id="KeyR" class="command centered">R</div>
       </div>
       <div id="launch" class="centered column overlay hidden">
         <div id="instructions"></div>

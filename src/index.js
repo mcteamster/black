@@ -34,11 +34,11 @@ let S = {
       E: null,
       R: null,
     },
-    selected: ['s1', 's2', 's3'],
+    selected: [],
   },
   story: {
     narrator: null,
-    unlocked: ['s1', 's2', 's3'],
+    unlocked: [],
   },
 }
 
@@ -51,11 +51,8 @@ const startGame = () => {
   S.canvas.cats.push(new Cat({ coordinates: [0, 0] }))
 
   // Apply Skill Selection
-  S.skills.selected = S.skills.selected.sort((a, b) => { return (a.substring(1) - b.substring(1)) }) // sort in alphnumeric order
-  S.skills.bindings.Q = S.skills.selected[0] ? skillRegister[S.skills.selected[0]].generator({ key: 'Q' }) : null
-  S.skills.bindings.W = S.skills.selected[1] ? skillRegister[S.skills.selected[1]].generator({ key: 'W' }) : null
-  S.skills.bindings.E = S.skills.selected[2] ? skillRegister[S.skills.selected[2]].generator({ key: 'E' }) : null
-  S.skills.bindings.R = S.skills.selected[3] ? skillRegister[S.skills.selected[3]].generator({ key: 'R' }) : null
+  S.skills.selected = S.skills.selected.sort((a, b) => { return (a?.substring(1) - b?.substring(1)) }) // sort in alphnumeric order
+  Object.keys(S.skills.bindings).forEach((key, index) => { S.skills.bindings[key] = S.skills.selected[index] ? skillRegister[S.skills.selected[index]].generator({ key: key }) : null })
 
   // Narrator
   S.story.narrator = new Narrator({ playthrough: S.meta.playthrough })
@@ -114,8 +111,8 @@ const resetGame = () => {
 // Elements
 const E = { body: document.body }
 const ids = [
-  'canvas', 'counter', 'dialogue', 'interest',
-  'mute', 'reset', 'stats',
+  'canvas', 'counter', 'dialogue', 'interest', 'stats',
+  'pause', 'mute', 'menu', 'restart', 'clear',
   'launch', 'instructions', 'picker', 'start',
   'KeyQ', 'KeyW', 'KeyE', 'KeyR'
 ]
@@ -181,6 +178,8 @@ const updateHud = () => {
           S.skills.bindings[key].cost == 1 ? 'ON' : 'OFF'
         }</div>
       </div>`
+    } else {
+      E[`Key${key}`].classList.add('hidden');
     }
   })
   E.mute.innerHTML = S.meta.mute ? '&#x1F507;' : '&#x1F509;'
@@ -206,6 +205,8 @@ const updateLauncher = () => {
             S.skills.selected.push(this.id);
             if (S.skills.selected.length > 4) {
               S.skills.selected = S.skills.selected.slice(-4);
+            } else if (S.skills.selected.length == 1 && S.skills.selected[0] == 's13') {
+              S.skills.selected = [null, null, null, 's13'] // Edge case for Auto only
             }
           }
           updateLauncher();
@@ -443,7 +444,7 @@ class HandsSkill extends Skill {
   }
 }
 
-// #2 - Times: +10% Mult
+// #2 - Times: +0.1x Mult
 class TimesSkill extends Skill {
   constructor(props) {
     super({
@@ -487,6 +488,67 @@ class GrowSkill extends Skill {
       if (this.level >= 100 && !S.story.unlocked.includes('s6')) {
         S.story.unlocked.push('s6')
       }
+    }
+  }
+}
+
+// #4 - Tools: 2x Base
+class ToolsSkill extends Skill {
+  constructor(props) {
+    super({
+      id: 's4',
+      cost: 100000,
+      ...props,
+    })
+  }
+
+  use() {
+    if (this.buy()) {
+      this.cost = 10 ** (5 + this.level) // Exponential
+      S.econ.base *= 2
+      updateBalance(0)
+    }
+  }
+}
+
+// #5 - Media: 2x Mult
+class MediaSkill extends Skill {
+  constructor(props) {
+    super({
+      id: 's5',
+      cost: 100000,
+      ...props,
+    })
+  }
+
+  use() {
+    if (this.buy()) {
+      this.cost = 10 ** (5 + this.level) // Exponential
+      S.econ.mult *= 2
+      updateBalance(0)
+    }
+  }
+}
+
+// #6 - Vets: 2x Interest
+class VetsSkill extends Skill {
+  constructor(props) {
+    super({
+      id: 's6',
+      cost: 10**6,
+      ...props,
+    })
+  }
+
+  use() {
+    if (this.buy()) {
+      this.cost *= (this.level + 1) // Factorial
+      if (S.econ.interest == 0) {
+        S.econ.interest = 0.01
+      } else {
+        S.econ.interest *= 2
+      }
+      updateBalance(0)
     }
   }
 }
@@ -537,25 +599,25 @@ const skillRegister = {
     label: 'Grow: Increase the interest rate of the current cat balance',
   },
   s4: {
-    generator: (props) => { return new GrowSkill(props) },
-    name: '',
-    icon: '',
-    effect: '',
-    label: '',
+    generator: (props) => { return new ToolsSkill(props) },
+    name: 'Tools',
+    icon: '&#x1F6E0;&#xFE0F;',
+    effect: '2x &#x270B;',
+    label: 'Tools: Double the current base rate.',
   },
   s5: {
-    generator: (props) => { return new GrowSkill(props) },
-    name: '',
-    icon: '',
-    effect: '',
-    label: '',
+    generator: (props) => { return new MediaSkill(props) },
+    name: 'Media',
+    icon: '&#x1F3AC;',
+    effect: '2x &#x274E;',
+    label: 'Media: Double the current multiplier rate. Cats have gone viral and taken over all forms of media.',
   },
   s6: {
-    generator: (props) => { return new GrowSkill(props) },
-    name: '',
-    icon: '',
-    effect: '',
-    label: '',
+    generator: (props) => { return new VetsSkill(props) },
+    name: 'Vets',
+    icon: '&#x1F3E5;',
+    effect: '2x &#x1F4C8;',
+    label: 'Vets: Double the current interest rate. Advances in modern feline medicine increase life expectancy and lower kitten mortality.',
   },
   s7: {
     generator: (props) => { return new GrowSkill(props) },
@@ -763,6 +825,7 @@ const endPlaythrough = () => {
   }
   S.meta.cutscene = false
   S.meta.active = false
+  S.meta.magnitude = 0
   S.meta.playthrough += 1
   saveGame()
 }
@@ -811,11 +874,40 @@ const tickInterval = setInterval(() => {
 
   // Story Events
   if (S.meta.active) {
+    // Base Skills
+    if (!S.story.unlocked.includes('s1')) {
+      if (S.econ.balance > 110) {
+        S.story.unlocked.push('s1')
+        S.skills.selected.push('s1')
+        S.skills.bindings.Q = skillRegister['s1'].generator({ key: 'Q' })
+        updateHud()
+      }
+    }
+    if (!S.story.unlocked.includes('s2')) {
+      if (S.econ.balance > 1000) {
+        S.story.unlocked.push('s2')
+        S.skills.selected.push('s2')
+        S.skills.bindings.W = skillRegister['s2'].generator({ key: 'W' })
+        updateHud()
+      }
+    }
+    if (!S.story.unlocked.includes('s3')) {
+      if (S.econ.balance > 10000) {
+        S.story.unlocked.push('s3')
+        S.skills.selected.push('s3')
+        S.skills.bindings.E = skillRegister['s3'].generator({ key: 'E' })
+        updateHud()
+      }
+    }
+
+    // Megacat
     if (!S.story.unlocked.includes('s7')) {
       if (S.econ.balance > 10 ** 6) {
         storyMegacat()
       }
     }
+
+    // Did not the cat
     if (!S.story.unlocked.includes('s13')) {
       if (S.econ.balance == 1 && elapsedTime > 10000) {
         storyAutocat()
@@ -828,17 +920,28 @@ const tickInterval = setInterval(() => {
 
 /* ========= Buttons ========= */
 // Menu Buttons
-E.reset.addEventListener('click', (event) => {
-  if (confirm("Clear Saved Data?") == true) {
-    resetGame();
-  } else if (confirm("End Current Playthrough?") == true) {
-    endPlaythrough();
-  }
+E.pause.addEventListener('click', (event) => {
+  E.menu.classList.toggle('hidden')
+  event.stopPropagation()
 })
 E.mute.addEventListener('click', (event) => {
   console.log('Toggling Mute');
   S.meta.mute = !S.meta.mute;
   updateHud();
+  event.stopPropagation()
+})
+E.restart.addEventListener('click', (event) => {
+  if (confirm("End Current Playthrough?") == true) {
+    endPlaythrough();
+    updateLauncher();
+    E.menu.classList.add('hidden')
+  }
+  event.stopPropagation()
+})
+E.clear.addEventListener('click', (event) => {
+  if (confirm("Clear Saved Data?") == true) {
+    resetGame();
+  }
   event.stopPropagation()
 })
 
