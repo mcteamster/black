@@ -1,45 +1,43 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>please DO NOT the cat</title>
-    <link rel="stylesheet" href="./styles.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
-  </head>
-  <body>
-    <canvas id="canvas"></canvas>
-    <div id="root">
-      <div id="buttons">
-        <div id="pause">&#x23F8;&#xFE0F;</div>
-        <div id="mute"></div>
-        <div id="menu" class="centered column overlay hidden">
-          <div id="restart" class="command centered column">
-            <div class="commandIcon">&#x1F504;</div>
-            <div>New Game</div>
-          </div>
-          <div id="clear" class="command centered column">
-            <div class="commandIcon">&#x1F5D1;&#xFE0F;</div>
-            <div>Clear All</div>
-          </div>
+
+<head>
+  <title>please DO NOT the cat</title>
+  <link rel="stylesheet" href="./styles.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="root">
+    <div id="stats" class="centered row"></div>
+    <div id="counter"></div>
+    <div id="interest"></div>
+    <div id="dialogue" class="centered column">
+      please DO NOT the cat
+    </div>
+    <div id="commands" class="centered row"></div>
+    <div id="launch" class="centered column overlay hidden">
+      <div id="instructions"></div>
+      <div id="picker" class="centered row"></div>
+      <div id="start">START</div>
+    </div>
+    <div id="buttons">
+      <div id="pause">&#x23F8;&#xFE0F;</div>
+      <div id="mute"></div>
+      <div id="menu" class="centered column overlay hidden">
+        <div id="restart" class="command centered column">
+          <div class="commandIcon">&#x1F504;</div>
+          <div>New Game</div>
+        </div>
+        <div id="clear" class="command centered column">
+          <div class="commandIcon">&#x1F5D1;&#xFE0F;</div>
+          <div>Clear All</div>
         </div>
       </div>
-      <div id="stats" class="centered row"></div>
-      <div id="counter"></div>
-      <div id="interest"></div>
-      <div id="dialogue" class="centered column">
-        please DO NOT the cat
-      </div>
-      <div id="commands" class="centered row">
-        <div id="KeyQ" class="command centered">Q</div>
-        <div id="KeyW" class="command centered">W</div>
-        <div id="KeyE" class="command centered">E</div>
-        <div id="KeyR" class="command centered">R</div>
-      </div>
-      <div id="launch" class="centered column overlay hidden">
-        <div id="instructions"></div>
-        <div id="picker" class="centered row"></div>
-        <div id="start">START</div>
-      </div>
     </div>
-    <script src="./index.js"></script>
-  </body>
+  </div>
+  <script src="./index.js"></script>
+</body>
+
 </html>

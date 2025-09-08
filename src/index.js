@@ -51,6 +51,7 @@ const startGame = () => {
   S.canvas.cats.push(new Cat({ coordinates: [0, 0] }))
 
   // Apply Skill Selection
+  registerKeys();
   S.skills.selected = S.skills.selected.sort((a, b) => { return (a?.substring(1) - b?.substring(1)) }) // sort in alphnumeric order
   Object.keys(S.skills.bindings).forEach((key, index) => { S.skills.bindings[key] = S.skills.selected[index] ? skillRegister[S.skills.selected[index]].generator({ key: key }) : null })
 
@@ -78,6 +79,7 @@ const loadGame = () => {
     S.canvas.cats = S.canvas.cats.map((cat) => new Cat(cat))
 
     // Skills
+    registerKeys();
     Object.keys(S.skills.bindings).forEach(key => {
       if (S.skills.bindings[key]?.id) {
         S.skills.bindings[key] = skillRegister[S.skills.bindings[key].id].generator(S.skills.bindings[key])
@@ -114,9 +116,19 @@ const ids = [
   'canvas', 'counter', 'dialogue', 'interest', 'stats',
   'pause', 'mute', 'menu', 'restart', 'clear',
   'launch', 'instructions', 'picker', 'start',
-  'KeyQ', 'KeyW', 'KeyE', 'KeyR'
 ]
 ids.forEach(id => E[id] = document.getElementById(id));
+const registerKeys = () => {
+  document.getElementById('commands').innerHTML = `
+    <div id="KeyQ" class="command centered">Q</div>
+    <div id="KeyW" class="command centered">W</div>
+    <div id="KeyE" class="command centered">E</div>
+    <div id="KeyR" class="command centered">R</div>
+  `
+  const keys = ['KeyQ', 'KeyW', 'KeyE', 'KeyR']
+  keys.forEach(id => E[id] = document.getElementById(id));
+}
+registerKeys();
 
 // Canvas
 E.canvas.width = S.canvas.size[0];
@@ -175,7 +187,7 @@ const updateHud = () => {
         <div class='commandEffect'>${S.skills.bindings[key].effect}</div>
         <div class='commandCost'>${S.skills.bindings[key].cost > 1 ?
           notation((S.skills.bindings[key].cost * S.econ.discount / 100), true) + '&nbsp;' + blackCat :
-          S.skills.bindings[key].cost == 1 ? 'ON' : 'OFF'
+          S.skills.bindings[key].cost == 0 ? '' : 'Active'
         }</div>
       </div>`
     } else {
@@ -542,6 +554,7 @@ class VetsSkill extends Skill {
 
   use() {
     if (this.buy()) {
+      console.log(S.econ.interest)
       this.cost *= (this.level + 1) // Factorial
       if (S.econ.interest == 0) {
         S.econ.interest = 0.01
@@ -552,6 +565,26 @@ class VetsSkill extends Skill {
     }
   }
 }
+
+// #8 - Payday: Once off lump sum
+class PaydaySkill extends Skill {
+  constructor(props) {
+    super({
+      id: 's8',
+      cost: 0,
+      ...props,
+    })
+    this.use()
+  }
+
+  use() {
+    if (this.cost == 0) {
+      this.cost = 1
+      S.econ.balance += 10**(S.story.unlocked.length)
+    }
+  }
+}
+
 
 // #13 - Auto: Clicks per second
 class AutoSkill extends Skill {
@@ -627,18 +660,18 @@ const skillRegister = {
     label: '',
   },
   s8: {
-    generator: (props) => { return new GrowSkill(props) },
-    name: '',
-    icon: '',
-    effect: '',
-    label: '',
+    generator: (props) => { return new PaydaySkill(props) },
+    name: 'Payday',
+    icon: '&#x1F4B0;',
+    effect: 'Payday',
+    label: 'Payday: Start with a lump sum of cats. Scales based on the number of unlocked skills. The Fat Cats hoard generational wealth.',
   },
   s9: {
-    generator: (props) => { return new GrowSkill(props) },
-    name: '',
-    icon: '',
-    effect: '',
-    label: '',
+    generator: (props) => { return new NekroSkill(props) },
+    name: 'Nekro',
+    icon: '&#x1FAA6;',
+    effect: 'Discount',
+    label: 'Nekromancy: ',
   },
   s10: {
     generator: (props) => { return new GrowSkill(props) },
@@ -868,7 +901,7 @@ const tickInterval = setInterval(() => {
     for (let i = 0; i < S.econ.auto; i++) {
       setTimeout(() => {
         patCat()
-      }, 50 * i)
+      }, 70 * i)
     }
   }
 
