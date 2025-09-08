@@ -9,6 +9,7 @@ let S = {
     balance: 1, // Current Cats
     base: 1, // Cats per click
     discount: 100, // Price Modifier %
+    drain: 0, // Loss per tick
     interest: 0, // Growth % per tick
     mult: 100, // Multiplier %
     total: 0, // Cats accumulated over all time
@@ -52,8 +53,18 @@ const startGame = () => {
 
   // Apply Skill Selection
   registerKeys();
-  S.skills.selected = S.skills.selected.sort((a, b) => { return (a?.substring(1) - b?.substring(1)) }) // sort in alphnumeric order
-  Object.keys(S.skills.bindings).forEach((key, index) => { S.skills.bindings[key] = S.skills.selected[index] ? skillRegister[S.skills.selected[index]].generator({ key: key }) : null })
+  S.skills.selected = S.skills.selected.sort((a, b) => { return (a.substring(1) - b.substring(1)) }) // sort in alphnumeric order
+  if (S.skills.selected.length == 1 && S.skills.selected[0] == 's13') {
+    // Edge case for Auto only
+    S.skills.bindings = {
+      Q: null,
+      W: null,
+      E: null,
+      R: skillRegister.s13.generator({ key: 'R' })
+    }
+  } else {
+    Object.keys(S.skills.bindings).forEach((key, index) => { S.skills.bindings[key] = S.skills.selected[index] ? skillRegister[S.skills.selected[index]].generator({ key: key }) : null })
+  }
 
   // Narrator
   S.story.narrator = new Narrator({ playthrough: S.meta.playthrough })
@@ -175,20 +186,33 @@ const notation = (x, short) => {
 const updateHud = () => {
   E.counter.innerHTML = (S.meta.playthrough == 1 && S.econ.balance == 1) ? '' : `${blackCat} ${notation(S.econ.balance)}`;
   E.interest.innerHTML = `${S.econ.interest > 0 ? '&#x1F4C8; ' + (S.econ.interest.toFixed(2)) + '% ps' : ''}`
-  E.stats.innerHTML = `${S.econ.base > 1 ? '&#x270B;' + notation(S.econ.base, true) : ''}${S.econ.mult > 100 ? ' &#x274E; ' + (S.econ.mult / 100).toFixed(1) : ''}`;
+  E.stats.innerHTML = `
+    ${S.econ.base > 1 ? '&#x270B; ' + notation(S.econ.base, true) : ''}&nbsp;
+    ${S.econ.mult > 100 ? ' &#x274E; ' + (S.econ.mult > 10**5 ? notation(S.econ.mult / 100, true) : (S.econ.mult / 100).toFixed(1)) : ''}
+  `;
   ['Q', 'W', 'E', 'R'].forEach(key => {
     if (S.skills.bindings[key]) {
       const element = E[`Key${key}`]
       if (S.econ.balance > (S.skills.bindings[key].cost * S.econ.discount / 100)) {
         S.skills.bindings[key].enable()
       }
+      let price = ''
+      if (S.skills.bindings[key].cooldown > 0) {
+        price = (((S.skills.bindings[key].timestamp + (S.skills.bindings[key].cooldown * S.econ.discount / 100)) - (new Date()).getTime())/1000).toFixed(0)
+        if (price <= 0) {
+          price = 'Ready'
+        } else {
+          price += 's'
+        }
+      } else if (S.skills.bindings[key].cost > 1) {
+        price = notation((S.skills.bindings[key].cost * S.econ.discount / 100), true) + '&nbsp;' + blackCat
+      } else if (S.skills.bindings[key].cost == 1) {
+        price = 'Active'
+      }
       element.innerHTML = `<div>
         <div class='commandIcon'>${S.skills.bindings[key].icon}</div>
-        <div class='commandEffect'>${S.skills.bindings[key].effect}</div>
-        <div class='commandCost'>${S.skills.bindings[key].cost > 1 ?
-          notation((S.skills.bindings[key].cost * S.econ.discount / 100), true) + '&nbsp;' + blackCat :
-          S.skills.bindings[key].cost == 0 ? '' : 'Active'
-        }</div>
+        <div class='commandEffect'>${(typeof S.skills.bindings[key].effect == 'function') ? S.skills.bindings[key].effect() : S.skills.bindings[key].effect}</div>
+        <div class='commandPrice'>${price}</div>
       </div>`
     } else {
       E[`Key${key}`].classList.add('hidden');
@@ -217,8 +241,6 @@ const updateLauncher = () => {
             S.skills.selected.push(this.id);
             if (S.skills.selected.length > 4) {
               S.skills.selected = S.skills.selected.slice(-4);
-            } else if (S.skills.selected.length == 1 && S.skills.selected[0] == 's13') {
-              S.skills.selected = [null, null, null, 's13'] // Edge case for Auto only
             }
           }
           updateLauncher();
@@ -255,6 +277,9 @@ const updateBalance = (cats) => {
   if (S.meta.active && !S.meta.cutscene) {
     // Scaling
     if (cats == Infinity) {
+      S.econ.cats = Infinity
+      S.econ.total = Infinity
+      updateHud();
       return
     } else if (cats > 0) {
       S.econ.total += cats;
@@ -400,6 +425,8 @@ class Skill {
     this.icon = skillRegister[this.id].icon
     this.label = skillRegister[this.id].label
     this.cost = props.cost
+    this.cooldown = props?.cooldown || 0
+    this.timestamp = props?.timestamp || 0
     this.key = props.key
     this.level = props?.level || 0
     this.assign()
@@ -449,18 +476,37 @@ class HandsSkill extends Skill {
       updateBalance(0)
 
       // Unlock upgraded skill
-      if (this.level >= 10000 && !S.story.unlocked.includes('s4')) {
-        S.story.unlocked.push('s4')
+      if (this.level >= 10000 && !S.story.unlocked.includes('s2')) {
+        S.story.unlocked.push('s2')
       }
     }
   }
 }
 
-// #2 - Times: +0.1x Mult
-class TimesSkill extends Skill {
+// #2 - Forge: 2x Base
+class ForgeSkill extends Skill {
   constructor(props) {
     super({
       id: 's2',
+      cost: 100000,
+      ...props,
+    })
+  }
+
+  use() {
+    if (this.buy()) {
+      this.cost = 10 ** (5 + this.level) // Exponential
+      S.econ.base *= 2
+      updateBalance(0)
+    }
+  }
+}
+
+// #3 - Times: +0.1x Mult
+class TimesSkill extends Skill {
+  constructor(props) {
+    super({
+      id: 's3',
       cost: 1000,
       ...props,
     })
@@ -473,18 +519,37 @@ class TimesSkill extends Skill {
       updateBalance(0)
 
       // Unlock upgraded skill
-      if (this.level >= 1000 && !S.story.unlocked.includes('s5')) {
-        S.story.unlocked.push('s5')
+      if (this.level >= 1000 && !S.story.unlocked.includes('s4')) {
+        S.story.unlocked.push('s4')
       }
     }
   }
 }
 
-// #3 - Grow: +0.01% Interest
+// #4 - Media: 2x Mult
+class MediaSkill extends Skill {
+  constructor(props) {
+    super({
+      id: 's4',
+      cost: 100000,
+      ...props,
+    })
+  }
+
+  use() {
+    if (this.buy()) {
+      this.cost = 10 ** (5 + this.level) // Exponential
+      S.econ.mult *= 2
+      updateBalance(0)
+    }
+  }
+}
+
+// #5 - Grow: +0.01% Interest
 class GrowSkill extends Skill {
   constructor(props) {
     super({
-      id: 's3',
+      id: 's5',
       cost: 10000,
       ...props,
     })
@@ -504,57 +569,18 @@ class GrowSkill extends Skill {
   }
 }
 
-// #4 - Tools: 2x Base
-class ToolsSkill extends Skill {
-  constructor(props) {
-    super({
-      id: 's4',
-      cost: 100000,
-      ...props,
-    })
-  }
-
-  use() {
-    if (this.buy()) {
-      this.cost = 10 ** (5 + this.level) // Exponential
-      S.econ.base *= 2
-      updateBalance(0)
-    }
-  }
-}
-
-// #5 - Media: 2x Mult
-class MediaSkill extends Skill {
-  constructor(props) {
-    super({
-      id: 's5',
-      cost: 100000,
-      ...props,
-    })
-  }
-
-  use() {
-    if (this.buy()) {
-      this.cost = 10 ** (5 + this.level) // Exponential
-      S.econ.mult *= 2
-      updateBalance(0)
-    }
-  }
-}
-
 // #6 - Vets: 2x Interest
 class VetsSkill extends Skill {
   constructor(props) {
     super({
       id: 's6',
-      cost: 10**6,
+      cost: 10 ** 6,
       ...props,
     })
   }
 
   use() {
     if (this.buy()) {
-      console.log(S.econ.interest)
       this.cost *= (this.level + 1) // Factorial
       if (S.econ.interest == 0) {
         S.econ.interest = 0.01
@@ -566,11 +592,78 @@ class VetsSkill extends Skill {
   }
 }
 
-// #8 - Payday: Once off lump sum
-class PaydaySkill extends Skill {
+// #7 - Catnip: Burst of clicks on cooldown
+class CatnipSkill extends Skill {
+  constructor(props) {
+    super({
+      id: 's7',
+      cost: 0,
+      cooldown: 15000,
+      timestamp: 0,
+      ...props,
+    })
+  }
+
+  use() {
+    const now = (new Date()).getTime()
+    if (now > (this.timestamp + (this.cooldown * S.econ.discount / 100))) {
+      this.timestamp = now;
+      updateBalance(S.econ.base * S.econ.mult * 10) // 1000 Clicks
+    }
+  }
+}
+
+// #8 - Space: Delayed 10x return of current balance
+class SpaceSkill extends Skill {
   constructor(props) {
     super({
       id: 's8',
+      cost: 0,
+      cooldown: 300000,
+      timestamp: 0,
+      ...props,
+    })
+  }
+
+  use() {
+    const now = (new Date()).getTime()
+    if (now > (this.timestamp + (this.cooldown * S.econ.discount / 100))) {
+      this.timestamp = now;
+      const bounty = S.econ.balance * 10
+      setTimeout(() => {
+        updateBalance(bounty)
+      }, this.cooldown)
+      updateHud()
+    }
+  }
+}
+
+// #9 - Anti-Catter: Spend all cats
+class AntiCatterSkill extends Skill {
+  constructor(props) {
+    super({
+      id: 's9',
+      cost: 0,
+      cooldown: 15000,
+      timestamp: 0,
+      ...props,
+    })
+  }
+
+  use() {
+    const now = (new Date()).getTime()
+    if (now > (this.timestamp + (this.cooldown * S.econ.discount / 100))) {
+      this.timestamp = now;
+      // TODO
+    }
+  }
+}
+
+// #10 - Nekro: Discounts
+class NekroSkill extends Skill {
+  constructor(props) {
+    super({
+      id: 's10',
       cost: 0,
       ...props,
     })
@@ -580,11 +673,50 @@ class PaydaySkill extends Skill {
   use() {
     if (this.cost == 0) {
       this.cost = 1
-      S.econ.balance += 10**(S.story.unlocked.length)
+      S.econ.discount = 100 - 5*(S.story.unlocked.length)
     }
   }
 }
 
+// #11 - Payday: Once off lump sum
+class PaydaySkill extends Skill {
+  constructor(props) {
+    super({
+      id: 's11',
+      cost: 0,
+      ...props,
+    })
+    this.use()
+  }
+
+  use() {
+    if (this.cost == 0) {
+      this.cost = 1
+      S.econ.balance += 10 ** (S.story.unlocked.length)
+    }
+  }
+}
+
+// #12 - War: Initial Base and Mult, double cost
+class WarSkill extends Skill {
+  constructor(props) {
+    super({
+      id: 's12',
+      cost: 0,
+      ...props,
+    })
+    this.use()
+  }
+
+  use() {
+    if (this.cost == 0) {
+      this.cost = 1
+      S.econ.base = 1000 * (S.story.unlocked.length)
+      S.econ.mult = 1000 * (S.story.unlocked.length)
+      S.econ.discount *= 2
+    }
+  }
+}
 
 // #13 - Auto: Clicks per second
 class AutoSkill extends Skill {
@@ -615,90 +747,90 @@ const skillRegister = {
     name: 'Hands',
     icon: '&#x270B;',
     effect: '+1',
-    label: 'Hands: Increase the base number of cats per click.',
+    label: 'Hands: Increase the Base number of cats per click. So you can the cat.',
   },
   s2: {
+    generator: (props) => { return new ForgeSkill(props) },
+    name: 'Forge',
+    icon: '&#x1F3ED;',
+    effect: '2x &#x270B;',
+    label: 'Forge: Double the current base rate. Cats view themselves as the boss.',
+  },
+  s3: {
     generator: (props) => { return new TimesSkill(props) },
     name: 'Times',
     icon: '&#x274E;',
     effect: '+0.1x',
-    label: 'Times: Increase the multiplier for cats per click.',
-  },
-  s3: {
-    generator: (props) => { return new GrowSkill(props) },
-    name: 'Grow',
-    icon: '&#x1F4C8;',
-    effect: '+0.01%',
-    label: 'Grow: Increase the interest rate of the current cat balance',
+    label: 'Times: Increase the Multiplier for cats per click. Let the good times roll.',
   },
   s4: {
-    generator: (props) => { return new ToolsSkill(props) },
-    name: 'Tools',
-    icon: '&#x1F6E0;&#xFE0F;',
-    effect: '2x &#x270B;',
-    label: 'Tools: Double the current base rate.',
-  },
-  s5: {
     generator: (props) => { return new MediaSkill(props) },
     name: 'Media',
     icon: '&#x1F3AC;',
     effect: '2x &#x274E;',
-    label: 'Media: Double the current multiplier rate. Cats have gone viral and taken over all forms of media.',
+    label: 'Media: Double the current multiplier rate. Cats go viral and take over all forms of media.',
+  },
+  s5: {
+    generator: (props) => { return new GrowSkill(props) },
+    name: 'Grow',
+    icon: '&#x1F4C8;',
+    effect: '+0.01%',
+    label: 'Grow: Increase the Interest rate of the current cat balance. A litter of kitties needs litres of kitty litter.',
   },
   s6: {
     generator: (props) => { return new VetsSkill(props) },
     name: 'Vets',
     icon: '&#x1F3E5;',
     effect: '2x &#x1F4C8;',
-    label: 'Vets: Double the current interest rate. Advances in modern feline medicine increase life expectancy and lower kitten mortality.',
+    label: 'Vets: Double the current interest rate. Advances in modern feline medicine increase life expectancy, birth rates, and lower kitten mortality.',
   },
   s7: {
-    generator: (props) => { return new GrowSkill(props) },
-    name: '',
-    icon: '',
-    effect: '',
-    label: '',
+    generator: (props) => { return new CatnipSkill(props) },
+    name: 'Catnip',
+    icon: '&#x1F33F;',
+    effect: 'Burst',
+    label: 'Catnip: Unleash a burst of 1000 clicks; 15 second cooldown. Cats are drawn in by the irresistible appeal of catnip.',
   },
   s8: {
+    generator: (props) => { return new SpaceSkill(props) },
+    name: 'Space',
+    icon: '&#x1F680;',
+    effect: `x10 ${blackCat}`,
+    label: 'Space: Gain 10x current balance after 5 minutes. Launch an Expurrdition to the stars.',
+  },
+  s9: {
+    generator: (props) => { return new AntiCatterSkill(props) },
+    name: 'Anti-Catter',
+    icon: '&#x2728;',
+    effect: '',
+    label: 'Anti-Catter: TODO',
+  },
+  s10: {
+    generator: (props) => { return new NekroSkill(props) },
+    name: 'Nekro',
+    icon: '&#x1FAA6;',
+    effect: () => { return `${100 - S.econ.discount}% Off` },
+    label: 'Nekro: Discount on all Purrchases; scales based on the number of unlocked skills. Nekomancy pushes the boundaries of the nine lives.',
+  },
+  s11: {
     generator: (props) => { return new PaydaySkill(props) },
     name: 'Payday',
     icon: '&#x1F4B0;',
     effect: 'Payday',
-    label: 'Payday: Start with a lump sum of cats. Scales based on the number of unlocked skills. The Fat Cats hoard generational wealth.',
-  },
-  s9: {
-    generator: (props) => { return new NekroSkill(props) },
-    name: 'Nekro',
-    icon: '&#x1FAA6;',
-    effect: 'Discount',
-    label: 'Nekromancy: ',
-  },
-  s10: {
-    generator: (props) => { return new GrowSkill(props) },
-    name: '',
-    icon: '',
-    effect: '',
-    label: '',
-  },
-  s11: {
-    generator: (props) => { return new GrowSkill(props) },
-    name: '',
-    icon: '',
-    effect: '',
-    label: '',
+    label: 'Payday: Start with a lump sum of cats; scales based on the number of unlocked skills. The Fat Cats hoard generational wealth.',
   },
   s12: {
-    generator: (props) => { return new GrowSkill(props) },
-    name: '',
-    icon: '',
-    effect: '',
-    label: '',
+    generator: (props) => { return new WarSkill(props) },
+    name: 'War',
+    icon: '&#x1F6A9;',
+    effect: 'Wartime',
+    label: 'War: Start with Base and Mult; scales based on the number of unlocked skills. Purrchases cost double. War takes more than it gives.',
   },
   s13: {
     generator: (props) => { return new AutoSkill(props) },
     name: 'Auto',
     icon: '&#x2699;&#xFE0F;',
-    effect: `Auto`,
+    effect: () => { return `Auto:${S.story.unlocked.length}` },
     label: 'Auto: Toggle automatic clicks per second - equal to the number of unlocked skills.',
   },
 }
@@ -761,12 +893,12 @@ class Narrator {
       {
         predicate: () => { return (S.skills.bindings.W?.level == 0 && S.econ.balance > S.skills.bindings.W?.cost) },
         line: `They'll go out and tell others about the good TIMES`,
-        include: () => { return (S.skills.bindings.W?.id == 's2') },
+        include: () => { return (S.skills.bindings.W?.id == 's3') },
       },
       {
         predicate: () => { return (S.skills.bindings.E?.level == 0 && S.econ.balance > S.skills.bindings.E?.cost) },
         line: `They want to have kittens! Maybe we should give them space to GROW?`,
-        include: () => { return (S.skills.bindings.E?.id == 's3') },
+        include: () => { return (S.skills.bindings.E?.id == 's5') },
       },
     ]
 
@@ -852,6 +984,7 @@ const endPlaythrough = () => {
     balance: 1, // Current Cats
     base: 1, // Cats per click
     discount: 100, // Price Modifier %
+    drain: 0, // Loss per tick
     interest: 0, // Growth % per tick
     mult: 100, // Multiplier %
     total: 0, // Cats accumulated over all time
@@ -887,22 +1020,9 @@ E.canvas.addEventListener('click', patCat)
 const tickInterval = setInterval(() => {
   const elapsedTime = (new Date().getTime() - S.meta.starttime);
 
-  // Save
-  if ((elapsedTime % 60000) < 1000) {
+  // Auto Save
+  if ((elapsedTime % 300000) < 1000) {
     saveGame()
-  }
-
-  // Econ
-  if (S.econ.interest > 0) {
-    updateBalance(Math.floor(S.econ.balance * S.econ.interest / 100))
-  }
-
-  if (S.econ.auto > 0) {
-    for (let i = 0; i < S.econ.auto; i++) {
-      setTimeout(() => {
-        patCat()
-      }, 70 * i)
-    }
   }
 
   // Story Events
@@ -913,23 +1033,20 @@ const tickInterval = setInterval(() => {
         S.story.unlocked.push('s1')
         S.skills.selected.push('s1')
         S.skills.bindings.Q = skillRegister['s1'].generator({ key: 'Q' })
-        updateHud()
-      }
-    }
-    if (!S.story.unlocked.includes('s2')) {
-      if (S.econ.balance > 1000) {
-        S.story.unlocked.push('s2')
-        S.skills.selected.push('s2')
-        S.skills.bindings.W = skillRegister['s2'].generator({ key: 'W' })
-        updateHud()
       }
     }
     if (!S.story.unlocked.includes('s3')) {
-      if (S.econ.balance > 10000) {
+      if (S.econ.balance > 1000) {
         S.story.unlocked.push('s3')
         S.skills.selected.push('s3')
-        S.skills.bindings.E = skillRegister['s3'].generator({ key: 'E' })
-        updateHud()
+        S.skills.bindings.W = skillRegister['s3'].generator({ key: 'W' })
+      }
+    }
+    if (!S.story.unlocked.includes('s5')) {
+      if (S.econ.balance > 10000) {
+        S.story.unlocked.push('s5')
+        S.skills.selected.push('s5')
+        S.skills.bindings.E = skillRegister['s5'].generator({ key: 'E' })
       }
     }
 
@@ -948,6 +1065,25 @@ const tickInterval = setInterval(() => {
     }
   } else {
     updateLauncher()
+  }
+
+  // Econ
+  if (S.econ.interest > 0) {
+    updateBalance(Math.floor(S.econ.balance * S.econ.interest / 100))
+  } else {
+    updateHud()
+  }
+
+  if (S.econ.auto > 0) {
+    for (let i = 0; i < S.econ.auto; i++) {
+      setTimeout(() => {
+        patCat()
+      }, 70 * i)
+    }
+  }
+
+  if (S.econ.drain > 0) {
+    updateBalance(S.econ.drain)
   }
 }, 1000)
 
@@ -985,6 +1121,8 @@ const hotkeydown = (event) => {
       document.getElementById(event.code).click()
     } else if (event.code === 'Space' || event.key === ' ') {
       patCat();
+    } else if (event.code === 'Escape' || event.key === 'Escape') {
+      E.pause.click()
     }
   }
 }
@@ -996,3 +1134,4 @@ loadGame() || startGame()
 /* ========= Debug ========= */
 // S.econ.balance = 10000
 // S.econ.discount = 50
+S.story.unlocked = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11', 's12', 's13']
