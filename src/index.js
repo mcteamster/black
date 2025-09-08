@@ -41,19 +41,19 @@ let S = {
     narrator: null,
     unlocked: [],
   },
-}
+};
 
 const startGame = () => {
   E.launch.classList.add('hidden');
   S.meta.active = true;
-  S.meta.starttime = (new Date()).getTime()
+  S.meta.starttime = (new Date()).getTime();
 
   // First Cat
-  S.canvas.cats.push(new Cat({ coordinates: [0, 0] }))
+  S.canvas.cats.push(new Cat({ coordinates: [0, 0] }));
 
   // Apply Skill Selection
   registerKeys();
-  S.skills.selected = S.skills.selected.sort((a, b) => { return (a.substring(1) - b.substring(1)) }) // sort in alphnumeric order
+  S.skills.selected = S.skills.selected.sort((a, b) => { return (a.substring(1) - b.substring(1)) }); // sort in alphnumeric order
   if (S.skills.selected.length == 1 && S.skills.selected[0] == 's13') {
     // Edge case for Auto only
     S.skills.bindings = {
@@ -61,73 +61,73 @@ const startGame = () => {
       W: null,
       E: null,
       R: skillRegister.s13.generator({ key: 'R' })
-    }
+    };
   } else {
-    Object.keys(S.skills.bindings).forEach((key, index) => { S.skills.bindings[key] = S.skills.selected[index] ? skillRegister[S.skills.selected[index]].generator({ key: key }) : null })
+    Object.keys(S.skills.bindings).forEach((key, index) => { S.skills.bindings[key] = S.skills.selected[index] ? skillRegister[S.skills.selected[index]].generator({ key: key }) : null });
   }
 
   // Narrator
-  S.story.narrator = new Narrator({ playthrough: S.meta.playthrough })
+  S.story.narrator = new Narrator({ playthrough: S.meta.playthrough });
 
   // UI
   updateBalance(0);
-}
+};
 
 const saveGame = () => {
-  console.debug('Saving Game')
-  const saveData = JSON.stringify(S)
-  localStorage.setItem('mcteamster.black.savedata', saveData)
-}
-onbeforeunload = saveGame
+  console.debug('Saving Game');
+  const saveData = JSON.stringify(S);
+  localStorage.setItem('mcteamster.black.savedata', saveData);
+};
+onbeforeunload = saveGame;
 
 const loadGame = () => {
-  const loadData = localStorage.getItem('mcteamster.black.savedata')
+  const loadData = localStorage.getItem('mcteamster.black.savedata');
   if (loadData) {
-    S = JSON.parse(loadData)
+    S = JSON.parse(loadData);
 
     // Restore Cats
-    S.canvas.size = [window.screen.width * 1.5, window.screen.height * 1.5]
-    S.canvas.cats = S.canvas.cats.map((cat) => new Cat(cat))
+    S.canvas.size = [window.screen.width * 1.5, window.screen.height * 1.5];
+    S.canvas.cats = S.canvas.cats.map((cat) => new Cat(cat));
 
     // Skills
     registerKeys();
     Object.keys(S.skills.bindings).forEach(key => {
       if (S.skills.bindings[key]?.id) {
-        S.skills.bindings[key] = skillRegister[S.skills.bindings[key].id].generator(S.skills.bindings[key])
+        S.skills.bindings[key] = skillRegister[S.skills.bindings[key].id].generator(S.skills.bindings[key]);
       } else {
-        S.skills.bindings[key] = null
+        S.skills.bindings[key] = null;
       }
-    })
+    });
 
     // Narrator
-    S.story.narrator = new Narrator(S.story.narrator)
+    S.story.narrator = new Narrator(S.story.narrator);
 
     // UI
     updateBalance(0);
     if (!S.meta.active) {
-      updateLauncher()
+      updateLauncher();
     }
     return true
   } else {
     return false
   }
-}
+};
 
 const resetGame = () => {
   console.debug('Resetting Game');
   localStorage.removeItem('mcteamster.black.savedata');
   onbeforeunload = undefined;
   location.reload();
-}
+};
 
 /* ========= Page Setup ========= */
 // Elements
-const E = { body: document.body }
+const E = { body: document.body };
 const ids = [
   'canvas', 'counter', 'dialogue', 'interest', 'stats',
   'pause', 'mute', 'menu', 'restart', 'clear',
   'launch', 'instructions', 'picker', 'start',
-]
+];
 ids.forEach(id => E[id] = document.getElementById(id));
 const registerKeys = () => {
   document.getElementById('commands').innerHTML = `
@@ -135,10 +135,10 @@ const registerKeys = () => {
     <div id="KeyW" class="command centered">W</div>
     <div id="KeyE" class="command centered">E</div>
     <div id="KeyR" class="command centered">R</div>
-  `
-  const keys = ['KeyQ', 'KeyW', 'KeyE', 'KeyR']
+  `;
+  const keys = ['KeyQ', 'KeyW', 'KeyE', 'KeyR'];
   keys.forEach(id => E[id] = document.getElementById(id));
-}
+};
 registerKeys();
 
 // Canvas
@@ -148,87 +148,87 @@ const ctx = E.canvas.getContext('2d');
 ctx.fillStyle = 'black';
 
 // Constants
-const blackCat = '&#x1F408;&#x200D;&#x2B1B;' // 🐈‍⬛
-const meows = Array.from({ length: 5 }, () => { return new Audio('./meow.mp3') })
+const blackCat = '&#x1F408;&#x200D;&#x2B1B;'; // 🐈‍⬛
+const meows = Array.from({ length: 5 }, () => { return new Audio('./meow.mp3') });
 
 // Helpers
 const notation = (x, short) => {
   let value;
   let suffix = short ? '' : ' cats';
   if (x == 1) {
-    value = 1
-    suffix = short ? '' : ' cat'
+    value = 1;
+    suffix = short ? '' : ' cat';
   } else if (x > 1 && x < 10 ** 6) {
-    value = x.toFixed(0)
+    value = x.toFixed(0);
   } else if (x >= 10 ** 6 && x < 10 ** 21) {
     if (x >= 10 ** 18) {
-      value = (x / 10 ** 18).toFixed(2)
-      suffix = short ? 'E' : ' Exacats'
+      value = (x / 10 ** 18).toFixed(2);
+      suffix = short ? 'E' : ' Exacats';
     } else if (x >= 10 ** 15) {
-      value = (x / 10 ** 15).toFixed(2)
-      suffix = short ? 'P' : ' Petacats'
+      value = (x / 10 ** 15).toFixed(2);
+      suffix = short ? 'P' : ' Petacats';
     } else if (x >= 10 ** 12) {
-      value = (x / 10 ** 12).toFixed(2)
-      suffix = short ? 'T' : ' Teracats'
+      value = (x / 10 ** 12).toFixed(2);
+      suffix = short ? 'T' : ' Teracats';
     } else if (x >= 10 ** 9) {
-      value = (x / 10 ** 9).toFixed(2)
-      suffix = short ? 'G' : ' Gigacats'
+      value = (x / 10 ** 9).toFixed(2);
+      suffix = short ? 'G' : ' Gigacats';
     } else {
-      value = (x / 10 ** 6).toFixed(2)
-      suffix = short ? 'M' : ' Megacats'
+      value = (x / 10 ** 6).toFixed(2);
+      suffix = short ? 'M' : ' Megacats';
     }
   } else {
-    value = x.toPrecision(3)
+    value = x.toPrecision(3);
   }
   return `${value}${suffix}`
-}
+};
 
 const updateHud = () => {
   E.counter.innerHTML = (S.meta.playthrough == 1 && S.econ.balance == 1) ? '' : `${blackCat} ${notation(S.econ.balance)}`;
-  E.interest.innerHTML = `${S.econ.interest > 0 ? '&#x1F4C8; ' + (S.econ.interest.toFixed(2)) + '% ps' : ''}`
+  E.interest.innerHTML = `${S.econ.interest > 0 ? '&#x1F4C8; ' + (S.econ.interest.toFixed(2)) + '% ps' : ''}`;
   E.stats.innerHTML = `
     ${S.econ.base > 1 ? '&#x270B; ' + notation(S.econ.base, true) : ''}&nbsp;
     ${S.econ.mult > 100 ? ' &#x274E; ' + (S.econ.mult > 10**5 ? notation(S.econ.mult / 100, true) : (S.econ.mult / 100).toFixed(1)) : ''}
   `;
   ['Q', 'W', 'E', 'R'].forEach(key => {
     if (S.skills.bindings[key]) {
-      const element = E[`Key${key}`]
+      const element = E[`Key${key}`];
       if (S.econ.balance > (S.skills.bindings[key].cost * S.econ.discount / 100)) {
-        S.skills.bindings[key].enable()
+        S.skills.bindings[key].enable();
       }
-      let price = ''
+      let price = '';
       if (S.skills.bindings[key].cooldown > 0) {
-        price = (((S.skills.bindings[key].timestamp + (S.skills.bindings[key].cooldown * S.econ.discount / 100)) - (new Date()).getTime())/1000).toFixed(0)
+        price = (((S.skills.bindings[key].timestamp + (S.skills.bindings[key].cooldown * S.econ.discount / 100)) - (new Date()).getTime())/1000).toFixed(0);
         if (price <= 0) {
-          price = 'Ready'
+          price = 'Ready';
         } else {
-          price += 's'
+          price += 's';
         }
       } else if (S.skills.bindings[key].cost > 1) {
-        price = notation((S.skills.bindings[key].cost * S.econ.discount / 100), true) + '&nbsp;' + blackCat
+        price = notation((S.skills.bindings[key].cost * S.econ.discount / 100), true) + '&nbsp;' + blackCat;
       } else if (S.skills.bindings[key].cost == 1) {
-        price = 'Active'
+        price = 'Active';
       }
       element.innerHTML = `<div>
         <div class='commandIcon'>${S.skills.bindings[key].icon}</div>
         <div class='commandEffect'>${(typeof S.skills.bindings[key].effect == 'function') ? S.skills.bindings[key].effect() : S.skills.bindings[key].effect}</div>
         <div class='commandPrice'>${price}</div>
-      </div>`
+      </div>`;
     } else {
       E[`Key${key}`].classList.add('hidden');
     }
   })
-  E.mute.innerHTML = S.meta.mute ? '&#x1F507;' : '&#x1F509;'
+  E.mute.innerHTML = S.meta.mute ? '&#x1F507;' : '&#x1F509;';
   S.story.narrator.nextLine();
-}
+};
 
 const updateLauncher = () => {
-  E.launch.classList.remove('hidden')
+  E.launch.classList.remove('hidden');
   E.instructions.innerHTML = `
     <div>Game #${S.meta.playthrough}</div>
     <div>Select Skills</div>
-  `
-  let pickerContent = ""
+  `;
+  let pickerContent = "";
   Object.keys(skillRegister).forEach((skill) => {
     if (S.story.unlocked.includes(skill)) {
       pickerContent += `<div id="${skill}" 
@@ -247,16 +247,16 @@ const updateLauncher = () => {
         ">
         <div class="commandIcon">${skillRegister[skill].icon}</div>
         <div>${skillRegister[skill].name}</div>
-      </div>`
+      </div>`;
     } else {
       pickerContent += `<div id="${skill}" class="command centered column" title="Play to Unlock">
         <div class="commandIcon">?</div>
-      </div>`
+      </div>`;
     }
   })
-  E.picker.innerHTML = pickerContent
-  E.start.addEventListener('click', startGame)
-}
+  E.picker.innerHTML = pickerContent;
+  E.start.addEventListener('click', startGame);
+};
 
 const updateMagnitude = () => {
   // Background Colour
@@ -264,21 +264,21 @@ const updateMagnitude = () => {
     Math.min(140 + 10 * Math.log10(S.econ.balance), 240),
     Math.max(50 - Math.log10(S.econ.balance), 0),
     Math.max(50 - 3 * Math.log10(S.econ.balance), 10)
-  ]
-  E.body.style.background = `hsl(${hue},${saturation}%,${lightness}%)`
+  ];
+  E.body.style.background = `hsl(${hue},${saturation}%,${lightness}%)`;
 
   if (Math.floor(Math.log10(S.econ.balance)) > S.meta.magnitude) {
-    S.meta.magnitude = Math.floor(Math.log10(S.econ.balance))
+    S.meta.magnitude = Math.floor(Math.log10(S.econ.balance));
   }
   return unitPower = (S.meta.magnitude - 3) > 0 ? (S.meta.magnitude - 3) : 0; // 0.1%
-}
+};
 
 const updateBalance = (cats) => {
   if (S.meta.active && !S.meta.cutscene) {
     // Scaling
     if (cats == Infinity) {
-      S.econ.cats = Infinity
-      S.econ.total = Infinity
+      S.econ.cats = Infinity;
+      S.econ.total = Infinity;
       updateHud();
       return
     } else if (cats > 0) {
@@ -290,17 +290,17 @@ const updateBalance = (cats) => {
 
     // Render New Cats, Remove Oldest
     if (cats > 0) {
-      const newCats = cats / 10 ** unitPower
+      const newCats = cats / 10 ** unitPower;
       for (let i = 0; i < newCats; i++) {
         if (S.canvas.cats.length < 1024) {
-          S.canvas.cats.push(new Cat())
+          S.canvas.cats.push(new Cat());
         } else {
           S.canvas.cats.shift();
           S.canvas.cats.push(new Cat());
         }
       }
     } else if (cats < 0) {
-      const oldCats = S.canvas.cats.length - (S.econ.balance / 10 ** unitPower > 1024 ? 1024 : S.econ.balance / 10 ** unitPower)
+      const oldCats = S.canvas.cats.length - (S.econ.balance / 10 ** unitPower > 1024 ? 1024 : S.econ.balance / 10 ** unitPower);
       for (let i = 0; i < oldCats; i++) {
         if (S.canvas.cats.length > 1) {
           S.canvas.cats.shift();
@@ -308,12 +308,12 @@ const updateBalance = (cats) => {
       }
       if (oldCats == 0) {
         S.canvas.cats.forEach(cat => {
-          cat.updateVelocity([cat.velocity[0] + cat.size * (Math.random() - 0.5), cat.velocity[1] + cat.size * (Math.random() - 0.5)])
+          cat.updateVelocity([cat.velocity[0] + cat.size * (Math.random() - 0.5), cat.velocity[1] + cat.size * (Math.random() - 0.5)]);
         })
       }
     }
   }
-}
+};
 
 /* ========= Physics ========= */
 class Cat {
@@ -323,7 +323,7 @@ class Cat {
     this.rotation = props?.rotation || 0;
     this.velocity = props?.velocity || [0, 0];
     if (props?.coordinates) {
-      this.coordinates = props.coordinates
+      this.coordinates = props.coordinates;
     } else {
       this.spawn();
     }
@@ -332,25 +332,25 @@ class Cat {
 
   spawn() {
     // Spawn using radial coordinates to distribute in more of a ball
-    const radius = Math.random() * (Math.max(...S.canvas.size)) / 2
-    const angle = Math.random() * Math.PI * 2
-    const [x, y] = [Math.sin(angle) * radius, Math.cos(angle) * radius]
+    const radius = Math.random() * (Math.max(...S.canvas.size)) / 2;
+    const angle = Math.random() * Math.PI * 2;
+    const [x, y] = [Math.sin(angle) * radius, Math.cos(angle) * radius];
     if (this.detectCollisions([x, y]).length > 0) {
-      this.spawn()
+      this.spawn();
     } else {
-      this.coordinates = [x, y]
+      this.coordinates = [x, y];
     }
   }
 
   resize() {
-    const size = 85 - 2.5 * Math.sqrt(S.canvas.cats.length) + S.meta.magnitude
-    this.size = size > 85 ? 85 : size
+    const size = 85 - 2.5 * Math.sqrt(S.canvas.cats.length) + S.meta.magnitude;
+    this.size = size > 85 ? 85 : size;
   }
 
   detectCollisions(position) {
     return S.canvas.cats.filter(cat => {
       if (cat.id != this.id) {
-        const [dx, dy] = [cat.coordinates[0] - position[0], cat.coordinates[1] - position[1]]
+        const [dx, dy] = [cat.coordinates[0] - position[0], cat.coordinates[1] - position[1]];
         if (Math.sqrt(dx ** 2 + dy ** 2) < (this.size + cat.size) * S.phys.overlap) {
           return true
         }
@@ -360,60 +360,60 @@ class Cat {
 
   updateVelocity(velocity) {
     // Add a little bit of noise to help smooth out the ball
-    this.velocity = [velocity[0] + (Math.random() - 0.5) * S.phys.noise, velocity[1] + (Math.random() - 0.5) * S.phys.noise]
+    this.velocity = [velocity[0] + (Math.random() - 0.5) * S.phys.noise, velocity[1] + (Math.random() - 0.5) * S.phys.noise];
     this.rotation += 0.01 * (Math.random() - 0.5);
   }
 
   updatePosition() {
     // Angle
-    this.orientation += this.rotation
+    this.orientation += this.rotation;
 
     // Desired New Positions
-    const [x1, y1] = [this.coordinates[0] + this.velocity[0], this.coordinates[1] + this.velocity[1]]
+    const [x1, y1] = [this.coordinates[0] + this.velocity[0], this.coordinates[1] + this.velocity[1]];
 
     // Collision Detection - This physics looks better than real conservation of momentum
-    const collisions = this.detectCollisions([x1, y1])
+    const collisions = this.detectCollisions([x1, y1]);
     collisions.forEach(cat => {
-      const [mx, my] = [S.phys.damping * (cat.velocity[0] + this.velocity[0]) / 2, S.phys.damping * (cat.velocity[1] + this.velocity[1]) / 2]
+      const [mx, my] = [S.phys.damping * (cat.velocity[0] + this.velocity[0]) / 2, S.phys.damping * (cat.velocity[1] + this.velocity[1]) / 2];
       if (y1 > 0) {
-        this.updateVelocity([-mx + Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, -my + Math.cos(Math.atan(x1 / y1)) * S.phys.gravity])
-        cat.updateVelocity([mx - Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, my - Math.cos(Math.atan(x1 / y1)) * S.phys.gravity])
+        this.updateVelocity([-mx + Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, -my + Math.cos(Math.atan(x1 / y1)) * S.phys.gravity]);
+        cat.updateVelocity([mx - Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, my - Math.cos(Math.atan(x1 / y1)) * S.phys.gravity]);
       } else if (x1 != 0 && y1 != 0) {
-        this.updateVelocity([-mx - Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, -my - Math.cos(Math.atan(x1 / y1)) * S.phys.gravity])
-        cat.updateVelocity([mx + Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, my + Math.cos(Math.atan(x1 / y1)) * S.phys.gravity])
+        this.updateVelocity([-mx - Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, -my - Math.cos(Math.atan(x1 / y1)) * S.phys.gravity]);
+        cat.updateVelocity([mx + Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, my + Math.cos(Math.atan(x1 / y1)) * S.phys.gravity]);
       } else {
-        this.updateVelocity([-mx, -my])
-        cat.updateVelocity([mx, my])
+        this.updateVelocity([-mx, -my]);
+        cat.updateVelocity([mx, my]);
       }
     })
     if (collisions.length == 0) {
       // Unhindered Movement
       if (y1 > 0) {
-        this.updateVelocity([this.velocity[0] - Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, this.velocity[1] - Math.cos(Math.atan(x1 / y1)) * S.phys.gravity])
+        this.updateVelocity([this.velocity[0] - Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, this.velocity[1] - Math.cos(Math.atan(x1 / y1)) * S.phys.gravity]);
       } else if (x1 != 0 && y1 != 0) {
-        this.updateVelocity([this.velocity[0] + Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, this.velocity[1] + Math.cos(Math.atan(x1 / y1)) * S.phys.gravity])
+        this.updateVelocity([this.velocity[0] + Math.sin(Math.atan(x1 / y1)) * S.phys.gravity, this.velocity[1] + Math.cos(Math.atan(x1 / y1)) * S.phys.gravity]);
       }
-      this.coordinates = [x1, y1]
+      this.coordinates = [x1, y1];
     }
   }
 
   render() {
     this.resize();
-    this.updatePosition()
-    const offsetX = (S.canvas.size[0] / 2) + this.coordinates[0]
-    const offsetY = (S.canvas.size[1] / 2) + this.coordinates[1]
-    const detail = 1.5 - 0.001 * S.canvas.cats.length
-    const path = new Path2D()
+    this.updatePosition();
+    const offsetX = (S.canvas.size[0] / 2) + this.coordinates[0];
+    const offsetY = (S.canvas.size[1] / 2) + this.coordinates[1];
+    const detail = 1.5 - 0.001 * S.canvas.cats.length;
+    const path = new Path2D();
     path.arc(offsetX, offsetY, this.size, 0, 2 * Math.PI); // Head
     if (detail > 1) {
-      path.moveTo(offsetX - this.size * Math.sin(this.orientation + Math.PI * (90 / 180)), offsetY - this.size * Math.cos(this.orientation + Math.PI * (90 / 180))) // Left Ear
-      path.lineTo(offsetX - detail * this.size * Math.sin(this.orientation + Math.PI * (30 / 180)), offsetY - detail * this.size * Math.cos(this.orientation + Math.PI * (30 / 180)))
-      path.lineTo(offsetX - this.size * Math.sin(this.orientation + Math.PI * (10 / 180)), offsetY - this.size * Math.cos(this.orientation + Math.PI * (10 / 180)))
-      path.moveTo(offsetX - this.size * Math.sin(this.orientation - Math.PI * (10 / 180)), offsetY - this.size * Math.cos(this.orientation - Math.PI * (10 / 180))) // Right Ear
-      path.lineTo(offsetX - detail * this.size * Math.sin(this.orientation - Math.PI * (30 / 180)), offsetY - detail * this.size * Math.cos(this.orientation - Math.PI * (30 / 180)))
-      path.lineTo(offsetX - this.size * Math.sin(this.orientation - Math.PI * (90 / 180)), offsetY - this.size * Math.cos(this.orientation - Math.PI * (90 / 180)))
+      path.moveTo(offsetX - this.size * Math.sin(this.orientation + Math.PI * (90 / 180)), offsetY - this.size * Math.cos(this.orientation + Math.PI * (90 / 180))); // Left Ear
+      path.lineTo(offsetX - detail * this.size * Math.sin(this.orientation + Math.PI * (30 / 180)), offsetY - detail * this.size * Math.cos(this.orientation + Math.PI * (30 / 180)));
+      path.lineTo(offsetX - this.size * Math.sin(this.orientation + Math.PI * (10 / 180)), offsetY - this.size * Math.cos(this.orientation + Math.PI * (10 / 180)));
+      path.moveTo(offsetX - this.size * Math.sin(this.orientation - Math.PI * (10 / 180)), offsetY - this.size * Math.cos(this.orientation - Math.PI * (10 / 180))); // Right Ear
+      path.lineTo(offsetX - detail * this.size * Math.sin(this.orientation - Math.PI * (30 / 180)), offsetY - detail * this.size * Math.cos(this.orientation - Math.PI * (30 / 180)));
+      path.lineTo(offsetX - this.size * Math.sin(this.orientation - Math.PI * (90 / 180)), offsetY - this.size * Math.cos(this.orientation - Math.PI * (90 / 180)));
     }
-    ctx.fill(path)
+    ctx.fill(path);
   }
 }
 
@@ -876,7 +876,7 @@ class Narrator {
       { predicate: 700000, line: "What's the worst that could possibly happen?" },
       { predicate: 10 ** 6, line: "WHAT. IS. THAT. IT'S A MEGACAT", include: () => { return (playthrough == 1) }, },
       { predicate: Infinity, line: "Ironically, your curiosity got us killed by cats." },
-    ]
+    ];
 
     // TODO: Rework this
     const skillLines = [
@@ -900,7 +900,7 @@ class Narrator {
         line: `They want to have kittens! Maybe we should give them space to GROW?`,
         include: () => { return (S.skills.bindings.E?.id == 's5') },
       },
-    ]
+    ];
 
     this.dialogLines = dialogLines.filter(line => {
       if (!line.include || line.include()) {
@@ -954,31 +954,31 @@ class Narrator {
 
 /* ========= Story Events ========= */
 const storyAutocat = () => {
-  console.info("Achievement: You did not the cat.")
+  console.info("Achievement: You did not the cat.");
   S.meta.cutscene = true;
   S.canvas.cats = [];
-  S.story.narrator.sayLine('You did not the cat')
+  S.story.narrator.sayLine('You did not the cat');
   setTimeout(() => {
     if (!S.story.unlocked.includes('s13')) {
       S.story.unlocked.push('s13'); // Unlock the Auto Skill
-      S.story.narrator.sayLine('Thank you for listening!!')
+      S.story.narrator.sayLine('Thank you for listening!!');
       setTimeout(() => {
-        S.story.narrator.sayLine('<i>You have unlocked the Auto skill</i>')
+        S.story.narrator.sayLine('<i>You have unlocked the Auto skill</i>');
         setTimeout(() => {
           endPlaythrough();
         }, 3000)
       }, 3000)
     }
   }, 3000)
-}
+};
 
 const storyMegacat = () => {
   // TODO: Megacat Story
-}
+};
 
 const endPlaythrough = () => {
   // Reset
-  S.canvas.cats = []
+  S.canvas.cats = [];
   S.econ = {
     auto: 0, // Auto per tick
     balance: 1, // Current Cats
@@ -988,13 +988,13 @@ const endPlaythrough = () => {
     interest: 0, // Growth % per tick
     mult: 100, // Multiplier %
     total: 0, // Cats accumulated over all time
-  }
-  S.meta.cutscene = false
-  S.meta.active = false
-  S.meta.magnitude = 0
-  S.meta.playthrough += 1
-  saveGame()
-}
+  };
+  S.meta.cutscene = false;
+  S.meta.active = false;
+  S.meta.magnitude = 0;
+  S.meta.playthrough += 1;
+  saveGame();
+};
 
 /* ========= Services ========= */
 // Rendering
@@ -1003,18 +1003,18 @@ const renderFrame = () => {
   S.canvas.cats.forEach(cat => {
     cat.render();
   })
-}
-setInterval(renderFrame, 50) // 20 FPS
+};
+setInterval(renderFrame, 50); // 20 FPS
 
 // Economy
 const patCat = () => {
-  updateBalance(S.econ.base * S.econ.mult / 100)
+  updateBalance(S.econ.base * S.econ.mult / 100);
   // Trigger Meow Sound Here
   if (!S.meta.mute) {
-    meows[Math.floor(meows.length * Math.random())].play()
+    meows[Math.floor(meows.length * Math.random())].play();
   }
-}
-E.canvas.addEventListener('click', patCat)
+};
+E.canvas.addEventListener('click', patCat);
 
 // Ticks
 const tickInterval = setInterval(() => {
@@ -1022,7 +1022,7 @@ const tickInterval = setInterval(() => {
 
   // Auto Save
   if ((elapsedTime % 300000) < 1000) {
-    saveGame()
+    saveGame();
   }
 
   // Story Events
@@ -1030,108 +1030,108 @@ const tickInterval = setInterval(() => {
     // Base Skills
     if (!S.story.unlocked.includes('s1')) {
       if (S.econ.balance > 110) {
-        S.story.unlocked.push('s1')
-        S.skills.selected.push('s1')
-        S.skills.bindings.Q = skillRegister['s1'].generator({ key: 'Q' })
+        S.story.unlocked.push('s1');
+        S.skills.selected.push('s1');
+        S.skills.bindings.Q = skillRegister['s1'].generator({ key: 'Q' });
       }
     }
     if (!S.story.unlocked.includes('s3')) {
       if (S.econ.balance > 1000) {
-        S.story.unlocked.push('s3')
-        S.skills.selected.push('s3')
-        S.skills.bindings.W = skillRegister['s3'].generator({ key: 'W' })
+        S.story.unlocked.push('s3');
+        S.skills.selected.push('s3');
+        S.skills.bindings.W = skillRegister['s3'].generator({ key: 'W' });
       }
     }
     if (!S.story.unlocked.includes('s5')) {
       if (S.econ.balance > 10000) {
-        S.story.unlocked.push('s5')
-        S.skills.selected.push('s5')
-        S.skills.bindings.E = skillRegister['s5'].generator({ key: 'E' })
+        S.story.unlocked.push('s5');
+        S.skills.selected.push('s5');
+        S.skills.bindings.E = skillRegister['s5'].generator({ key: 'E' });
       }
     }
 
     // Megacat
     if (!S.story.unlocked.includes('s7')) {
       if (S.econ.balance > 10 ** 6) {
-        storyMegacat()
+        storyMegacat();
       }
     }
 
     // Did not the cat
     if (!S.story.unlocked.includes('s13')) {
       if (S.econ.balance == 1 && elapsedTime > 10000) {
-        storyAutocat()
+        storyAutocat();
       }
     }
   } else {
-    updateLauncher()
+    updateLauncher();
   }
 
   // Econ
   if (S.econ.interest > 0) {
-    updateBalance(Math.floor(S.econ.balance * S.econ.interest / 100))
+    updateBalance(Math.floor(S.econ.balance * S.econ.interest / 100));
   } else {
-    updateHud()
+    updateHud();
   }
 
   if (S.econ.auto > 0) {
     for (let i = 0; i < S.econ.auto; i++) {
       setTimeout(() => {
-        patCat()
+        patCat();
       }, 70 * i)
     }
   }
 
   if (S.econ.drain > 0) {
-    updateBalance(S.econ.drain)
+    updateBalance(S.econ.drain);
   }
-}, 1000)
+}, 1000);
 
 /* ========= Buttons ========= */
 // Menu Buttons
 E.pause.addEventListener('click', (event) => {
-  E.menu.classList.toggle('hidden')
-  event.stopPropagation()
-})
+  E.menu.classList.toggle('hidden');
+  event.stopPropagation();
+});
 E.mute.addEventListener('click', (event) => {
   console.log('Toggling Mute');
   S.meta.mute = !S.meta.mute;
   updateHud();
-  event.stopPropagation()
-})
+  event.stopPropagation();
+});
 E.restart.addEventListener('click', (event) => {
   if (confirm("End Current Playthrough?") == true) {
     endPlaythrough();
     updateLauncher();
-    E.menu.classList.add('hidden')
+    E.menu.classList.add('hidden');
   }
-  event.stopPropagation()
-})
+  event.stopPropagation();
+});
 E.clear.addEventListener('click', (event) => {
   if (confirm("Clear Saved Data?") == true) {
     resetGame();
   }
-  event.stopPropagation()
-})
+  event.stopPropagation();
+});
 
 // Hotkeys
 const hotkeydown = (event) => {
   if (S.meta.active) {
     if (['KeyQ', 'KeyW', 'KeyE', 'KeyR'].includes(event.code)) {
-      document.getElementById(event.code).click()
+      document.getElementById(event.code).click();
     } else if (event.code === 'Space' || event.key === ' ') {
       patCat();
     } else if (event.code === 'Escape' || event.key === 'Escape') {
-      E.pause.click()
+      E.pause.click();
     }
   }
-}
+};
 document.addEventListener('keydown', hotkeydown, false);
 
 /* ========= Init ========= */
-loadGame() || startGame()
+loadGame() || startGame();
 
 /* ========= Debug ========= */
-// S.econ.balance = 10000
-// S.econ.discount = 50
-S.story.unlocked = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11', 's12', 's13']
+// S.econ.balance = 10000;
+// S.econ.discount = 50;
+S.story.unlocked = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11', 's12', 's13'];
