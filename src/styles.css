@@ -10,6 +10,11 @@ body {
   cursor: pointer;
 }
 
+a {
+  color: white;
+  text-decoration: underline;
+}
+
 canvas {
   position: fixed;
   top: 50%;
@@ -39,10 +44,10 @@ canvas {
 
 .overlay {
   position: fixed;
-  top: 0;
+  top: -50%;
   left: 0;
   width: 100%;
-  height: 100vh;
+  height: 200vh;
 }
 
 /* Components */
@@ -55,7 +60,7 @@ canvas {
   height: 5em;
   width: 5em;
   font-weight: bold;
-  font-size: 0.9em;
+  font-size: 0.8em;
 }
 
 .command:active {
@@ -99,26 +104,31 @@ canvas {
 }
 
 #launch {
-  background-color: black;
+  background: hsl(140, 50%, 25%);
   z-index: 30;
 }
 
 #instructions {
+  max-width: 20em;
   padding: 0.5em;
-  font-size: 1.5em;
 }
 
 #picker {
-  max-width: 18em;
+  max-width: 20em;
   flex-wrap: wrap;
 }
 
 #start {
   padding: 0.5em;
-  margin: 0.5em;
+  margin: 0.25em;
   font-size: 2em;
   border-radius: 0.5em;
   background-color: #333;
+}
+
+#playthrough {
+  padding: 0.5em;
+  font-size: 1.5em;
 }
 
 /* Stats */
@@ -152,12 +162,14 @@ canvas {
 }
 
 /* Menu */
-#mute {
-  position: fixed;
-  top: 0;
-  right: 0;
-  transform: translate(-50%, 50%);
-  z-index: 20;
+#menu {
+  background: black;
+  z-index: 40;
+}
+
+#info {
+  padding: 1em;
+  margin: 1em 0;
 }
 
 #pause {
@@ -168,9 +180,12 @@ canvas {
   z-index: 50;
 }
 
-#menu {
-  background-color: #888;
-  z-index: 40;
+#mute {
+  position: fixed;
+  top: 0;
+  right: 0;
+  transform: translate(-50%, 50%);
+  z-index: 20;
 }
 
 /* Mobile */

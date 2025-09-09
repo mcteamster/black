@@ -126,7 +126,7 @@ const E = { body: document.body };
 const ids = [
   'canvas', 'counter', 'dialogue', 'interest', 'stats',
   'pause', 'mute', 'menu', 'restart', 'clear',
-  'launch', 'instructions', 'picker', 'start',
+  'launch', 'instructions', 'picker', 'start', 'playthrough',
 ];
 ids.forEach(id => E[id] = document.getElementById(id));
 const registerKeys = () => {
@@ -225,8 +225,7 @@ const updateHud = () => {
 const updateLauncher = () => {
   E.launch.classList.remove('hidden');
   E.instructions.innerHTML = `
-    <div>Game #${S.meta.playthrough}</div>
-    <div>Select Skills</div>
+    <div>${S.skills.selected.length > 0 ? skillRegister[S.skills.selected[S.skills.selected.length - 1]].label : 'Select up to 4 Skills'}</div>
   `;
   let pickerContent = "";
   Object.keys(skillRegister).forEach((skill) => {
@@ -256,6 +255,7 @@ const updateLauncher = () => {
   })
   E.picker.innerHTML = pickerContent;
   E.start.addEventListener('click', startGame);
+  E.playthrough.innerHTML = `<div>Game #${S.meta.playthrough}</div>`
 };
 
 const updateMagnitude = () => {
@@ -483,8 +483,8 @@ class HandsSkill extends Skill {
   }
 }
 
-// #2 - Forge: 2x Base
-class ForgeSkill extends Skill {
+// #2 - Factory: 2x Base
+class FactorySkill extends Skill {
   constructor(props) {
     super({
       id: 's2',
@@ -638,13 +638,13 @@ class SpaceSkill extends Skill {
   }
 }
 
-// #9 - Anti-Catter: Spend all cats
+// #9 - Anti-Catter: Double or Nothing
 class AntiCatterSkill extends Skill {
   constructor(props) {
     super({
       id: 's9',
       cost: 0,
-      cooldown: 15000,
+      cooldown: 30000,
       timestamp: 0,
       ...props,
     })
@@ -654,7 +654,11 @@ class AntiCatterSkill extends Skill {
     const now = (new Date()).getTime()
     if (now > (this.timestamp + (this.cooldown * S.econ.discount / 100))) {
       this.timestamp = now;
-      // TODO
+      if (Math.random() > 1/S.meta.playthrough) {
+        updateBalance(S.econ.balance) // Double
+      } else {
+        updateBalance(1 - S.econ.balance) // Nothing
+      }
     }
   }
 }
@@ -747,42 +751,42 @@ const skillRegister = {
     name: 'Hands',
     icon: '&#x270B;',
     effect: '+1',
-    label: 'Hands: Increase the Base number of cats per click. So you can the cat.',
+    label: 'Hands: Increase the Base number of cats per click by 1. So you can the cat.',
   },
   s2: {
-    generator: (props) => { return new ForgeSkill(props) },
-    name: 'Forge',
+    generator: (props) => { return new FactorySkill(props) },
+    name: 'Factory',
     icon: '&#x1F3ED;',
     effect: '2x &#x270B;',
-    label: 'Forge: Double the current base rate. Cats view themselves as the boss.',
+    label: 'Factory: Double the current Base. Cats view themselves as the boss.',
   },
   s3: {
     generator: (props) => { return new TimesSkill(props) },
     name: 'Times',
     icon: '&#x274E;',
     effect: '+0.1x',
-    label: 'Times: Increase the Multiplier for cats per click. Let the good times roll.',
+    label: 'Times: Increase the Mult for cats per click by 0.1x. Let the good times roll.',
   },
   s4: {
     generator: (props) => { return new MediaSkill(props) },
     name: 'Media',
     icon: '&#x1F3AC;',
     effect: '2x &#x274E;',
-    label: 'Media: Double the current multiplier rate. Cats go viral and take over all forms of media.',
+    label: 'Media: Double the current Mult. Cats have gone viral and taken over all forms of media.',
   },
   s5: {
     generator: (props) => { return new GrowSkill(props) },
     name: 'Grow',
     icon: '&#x1F4C8;',
     effect: '+0.01%',
-    label: 'Grow: Increase the Interest rate of the current cat balance. A litter of kitties needs litres of kitty litter.',
+    label: 'Grow: Increase the Interest rate of the current cat balance by 0.01%. Litters of kitties need litres of kitty litter.',
   },
   s6: {
     generator: (props) => { return new VetsSkill(props) },
     name: 'Vets',
     icon: '&#x1F3E5;',
     effect: '2x &#x1F4C8;',
-    label: 'Vets: Double the current interest rate. Advances in modern feline medicine increase life expectancy, birth rates, and lower kitten mortality.',
+    label: 'Vets: Double the current Interest. Advances in modern feline medicine have increased life expectancy and kitten birth rates.',
   },
   s7: {
     generator: (props) => { return new CatnipSkill(props) },
@@ -796,42 +800,42 @@ const skillRegister = {
     name: 'Space',
     icon: '&#x1F680;',
     effect: `x10 ${blackCat}`,
-    label: 'Space: Gain 10x current balance after 5 minutes. Launch an Expurrdition to the stars.',
+    label: 'Space: Launch an Expurrdition to the stars; 5 minute cooldown. After 5 minutes gain 10x the balance at launch time.',
   },
   s9: {
     generator: (props) => { return new AntiCatterSkill(props) },
     name: 'Anti-Catter',
     icon: '&#x2728;',
-    effect: '',
-    label: 'Anti-Catter: TODO',
+    effect: () => { return `${(100 - 100/S.meta.playthrough).toFixed(0)}% x2` },
+    label: 'Anti-Catter: Double or Nothing; 30 second cooldown. Chances of success permanently increase with every playthrough.',
   },
   s10: {
     generator: (props) => { return new NekroSkill(props) },
     name: 'Nekro',
     icon: '&#x1FAA6;',
     effect: () => { return `${100 - S.econ.discount}% Off` },
-    label: 'Nekro: Discount on all Purrchases; scales based on the number of unlocked skills. Nekomancy pushes the boundaries of the nine lives.',
+    label: 'Nekro: Discount on all Purrchases; 5% off for each unlocked skill. Nekomancy pushes the boundaries of the nine lives.',
   },
   s11: {
     generator: (props) => { return new PaydaySkill(props) },
     name: 'Payday',
     icon: '&#x1F4B0;',
     effect: 'Payday',
-    label: 'Payday: Start with a lump sum of cats; scales based on the number of unlocked skills. The Fat Cats hoard generational wealth.',
+    label: 'Payday: Start with a lump sum of cats; increases tenfold for each unlocked skill. The Fat Cats have been hoarding generational wealth.',
   },
   s12: {
     generator: (props) => { return new WarSkill(props) },
     name: 'War',
     icon: '&#x1F6A9;',
     effect: 'Wartime',
-    label: 'War: Start with Base and Mult; scales based on the number of unlocked skills. Purrchases cost double. War takes more than it gives.',
+    label: 'War: Start with 1000 Base and 10x Mult for each unlocked skill. Purrchases cost double. War takes more than it gives.',
   },
   s13: {
     generator: (props) => { return new AutoSkill(props) },
     name: 'Auto',
     icon: '&#x2699;&#xFE0F;',
     effect: () => { return `Auto:${S.story.unlocked.length}` },
-    label: 'Auto: Toggle automatic clicks per second - equal to the number of unlocked skills.',
+    label: 'Auto: 1 automatic click per second for each unlocked skill. Can be toggled on/off.',
   },
 }
 
@@ -1100,7 +1104,7 @@ E.mute.addEventListener('click', (event) => {
   event.stopPropagation();
 });
 E.restart.addEventListener('click', (event) => {
-  if (confirm("End Current Playthrough?") == true) {
+  if (confirm("End current playthrough and start a New Game?") == true) {
     endPlaythrough();
     updateLauncher();
     E.menu.classList.add('hidden');
@@ -1108,7 +1112,7 @@ E.restart.addEventListener('click', (event) => {
   event.stopPropagation();
 });
 E.clear.addEventListener('click', (event) => {
-  if (confirm("Clear Saved Data?") == true) {
+  if (confirm("Clear ALL saved data. Are you sure?") == true) {
     resetGame();
   }
   event.stopPropagation();
@@ -1132,6 +1136,5 @@ document.addEventListener('keydown', hotkeydown, false);
 loadGame() || startGame();
 
 /* ========= Debug ========= */
-// S.econ.balance = 10000;
-// S.econ.discount = 50;
 S.story.unlocked = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11', 's12', 's13'];
+S.skills.selected = ['s1', 's3', 's5'];
