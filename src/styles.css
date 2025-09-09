@@ -163,7 +163,7 @@ canvas {
 
 /* Menu */
 #menu {
-  background: black;
+  background: inherit;
   z-index: 40;
 }
 

@@ -224,6 +224,7 @@ const updateHud = () => {
 
 const updateLauncher = () => {
   E.launch.classList.remove('hidden');
+  E.body.style.background = 'hsl(140, 50%, 25%)'
   E.instructions.innerHTML = `
     <div>${S.skills.selected.length > 0 ? skillRegister[S.skills.selected[S.skills.selected.length - 1]].label : 'Select up to 4 Skills'}</div>
   `;
@@ -1095,6 +1096,7 @@ const tickInterval = setInterval(() => {
 // Menu Buttons
 E.pause.addEventListener('click', (event) => {
   E.menu.classList.toggle('hidden');
+  // E.menu.style.background = E.body.style.background;
   event.stopPropagation();
 });
 E.mute.addEventListener('click', (event) => {
