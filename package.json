@@ -1,0 +1,26 @@
+{
+  "name": "black",
+  "version": "1.0.0",
+  "description": "Submission for JS13K 2025: Black Cat",
+  "private": true,
+  "directories": {
+    "doc": "docs"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.9"
+  },
+  "scripts": {
+    "build": "rm -rf dist; cp -r src/ dist/; esbuild src/styles.css --minify --outfile=dist/styles.css; esbuild src/index.js --minify --outfile=dist/index.js;",
+    "deploy": "mcdeploy black"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mcteamster/black.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mcteamster/black/issues"
+  },
+  "homepage": "https://github.com/mcteamster/black#readme"
+}
