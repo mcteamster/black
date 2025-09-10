@@ -130,12 +130,17 @@ const ids = [
 ];
 ids.forEach(id => E[id] = document.getElementById(id));
 const registerKeys = () => {
-  document.getElementById('commands').innerHTML = `
-    <div id="KeyQ" class="command centered">Q</div>
-    <div id="KeyW" class="command centered">W</div>
-    <div id="KeyE" class="command centered">E</div>
-    <div id="KeyR" class="command centered">R</div>
-  `;
+  let keyHTML = '';
+  ['Q', 'W', 'E', 'R'].forEach((key) => {
+    keyHTML += `
+      <div id="Key${key}" class="command centered column">
+        <div id="Key${key}Icon" class='commandIcon'>${key}</div>
+        <div id="Key${key}Effect" class='commandEffect'></div>
+        <div id="Key${key}Price" class='commandPrice'></div>
+      </div>
+    `
+  });
+  document.getElementById('commands').innerHTML = keyHTML;
   const keys = ['KeyQ', 'KeyW', 'KeyE', 'KeyR'];
   keys.forEach(id => E[id] = document.getElementById(id));
 };
@@ -192,7 +197,6 @@ const updateHud = () => {
   `;
   ['Q', 'W', 'E', 'R'].forEach(key => {
     if (S.skills.bindings[key]) {
-      const element = E[`Key${key}`];
       if (S.econ.balance > (S.skills.bindings[key].cost * S.econ.discount / 100)) {
         S.skills.bindings[key].enable();
       }
@@ -206,14 +210,12 @@ const updateHud = () => {
         }
       } else if (S.skills.bindings[key].cost > 1) {
         price = notation((S.skills.bindings[key].cost * S.econ.discount / 100), true) + '&nbsp;' + blackCat;
-      } else if (S.skills.bindings[key].cost == 1) {
-        price = 'Active';
+      } else if (S.skills.bindings[key].cost == 0) {
+        price = 'Off';
       }
-      element.innerHTML = `<div>
-        <div class='commandIcon'>${S.skills.bindings[key].icon}</div>
-        <div class='commandEffect'>${(typeof S.skills.bindings[key].effect == 'function') ? S.skills.bindings[key].effect() : S.skills.bindings[key].effect}</div>
-        <div class='commandPrice'>${price}</div>
-      </div>`;
+      document.getElementById(`Key${key}Icon`).innerHTML = `${S.skills.bindings[key].icon}`
+      document.getElementById(`Key${key}Effect`).innerHTML = `${(typeof S.skills.bindings[key].effect == 'function') ? S.skills.bindings[key].effect() : S.skills.bindings[key].effect}`
+      document.getElementById(`Key${key}Price`).innerHTML = `${price}`
     } else {
       E[`Key${key}`].classList.add('hidden');
     }
@@ -1055,13 +1057,38 @@ const tickInterval = setInterval(() => {
       }
     }
 
-    // Megacat
+    // Milestones
     if (!S.story.unlocked.includes('s7')) {
       if (S.econ.balance > 10 ** 6) {
         storyMegacat();
       }
     }
-
+    if (!S.story.unlocked.includes('s11')) {
+      if (S.econ.balance > 10 ** 9) {
+        // TODO Gigacat
+      }
+    }
+    if (!S.story.unlocked.includes('s12')) {
+      if (S.econ.balance > 10 ** 12) {
+        // TODO Teracat
+      }
+    }
+    if (!S.story.unlocked.includes('s10')) {
+      if (S.econ.balance > 10 ** 15) {
+        // TODO Petacat
+      }
+    }
+    if (!S.story.unlocked.includes('s8')) {
+      if (S.econ.balance > 10 ** 18) {
+        // TODO Exacat
+      }
+    }
+    if (!S.story.unlocked.includes('s9')) {
+      if (S.econ.balance > 10 ** 21) {
+        // TODO Infinity
+      }
+    }
+    
     // Did not the cat
     if (!S.story.unlocked.includes('s13')) {
       if (S.econ.balance == 1 && elapsedTime > 10000) {
@@ -1135,8 +1162,15 @@ const hotkeydown = (event) => {
 document.addEventListener('keydown', hotkeydown, false);
 
 /* ========= Init ========= */
-loadGame() || startGame();
-
-/* ========= Debug ========= */
-S.story.unlocked = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11', 's12', 's13'];
-S.skills.selected = ['s1', 's3', 's5'];
+// Check for Meta In-App Browsers
+if (navigator.userAgent.match(/FBAN|FBAV|Instagram/i)) {
+  console.warn('In-app browser detected');
+  document.body.outerHTML = `
+    <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+      Please open this page in your primary browser for the best gameplay experience
+    </div>
+  `
+  clearInterval(tickInterval)
+} else {
+  loadGame() || startGame();
+}
