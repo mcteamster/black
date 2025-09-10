@@ -1061,31 +1061,37 @@ const tickInterval = setInterval(() => {
     if (!S.story.unlocked.includes('s7')) {
       if (S.econ.balance > 10 ** 6) {
         storyMegacat();
+        S.story.unlocked.push('s7');
       }
     }
     if (!S.story.unlocked.includes('s11')) {
       if (S.econ.balance > 10 ** 9) {
         // TODO Gigacat
+        S.story.unlocked.push('s11');
       }
     }
     if (!S.story.unlocked.includes('s12')) {
       if (S.econ.balance > 10 ** 12) {
         // TODO Teracat
+        S.story.unlocked.push('s12');
       }
     }
     if (!S.story.unlocked.includes('s10')) {
       if (S.econ.balance > 10 ** 15) {
         // TODO Petacat
+        S.story.unlocked.push('s10');
       }
     }
     if (!S.story.unlocked.includes('s8')) {
       if (S.econ.balance > 10 ** 18) {
         // TODO Exacat
+        S.story.unlocked.push('s8');
       }
     }
     if (!S.story.unlocked.includes('s9')) {
       if (S.econ.balance > 10 ** 21) {
         // TODO Infinity
+        S.story.unlocked.push('s9');
       }
     }
     
