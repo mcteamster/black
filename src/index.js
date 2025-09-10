@@ -1139,17 +1139,13 @@ E.mute.addEventListener('click', (event) => {
   event.stopPropagation();
 });
 E.restart.addEventListener('click', (event) => {
-  if (confirm("End current playthrough and start a New Game?") == true) {
-    endPlaythrough();
-    updateLauncher();
-    E.menu.classList.add('hidden');
-  }
+  endPlaythrough();
+  updateLauncher();
+  E.menu.classList.add('hidden');
   event.stopPropagation();
 });
 E.clear.addEventListener('click', (event) => {
-  if (confirm("Clear ALL saved data. Are you sure?") == true) {
-    resetGame();
-  }
+  resetGame();
   event.stopPropagation();
 });
 
