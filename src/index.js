@@ -880,7 +880,6 @@ class Narrator {
       { predicate: 200000, line: "..." },
       { predicate: 400000, line: "Hey. Don't judge me. It's my first day!" },
       { predicate: 700000, line: "What's the worst that could possibly happen?" },
-      { predicate: 10 ** 6, line: "WHAT. IS. THAT. IT'S A MEGACAT" },
       { predicate: Infinity, line: "Ironically, your curiosity got us killed by cats." },
     ];
 
@@ -920,28 +919,29 @@ class Narrator {
 
 /* ========= Story Events ========= */
 const storyAutocat = () => {
-  if (S.meta.cutscene == false) {
-    console.info("Achievement: You did not the cat.");
-    S.meta.cutscene = true;
-    S.canvas.cats = [];
-    S.story.narrator.addLines([
-      { predicate: 0, duration: 3000, line: 'You did not the cat.' },
-      { predicate: 0, duration: 3000, line: 'Thank you for listening!!!' },
-      { predicate: 0, duration: 3000, line: '<i>You have unlocked the Auto skill</i>', callback: () => {
-          // Unlock the Auto Skill
-          if (!S.story.unlocked.includes('s13')) {
-            S.story.unlocked.push('s13'); 
-          }
-          endPlaythrough();
-        }
-      },
-      { predicate: 0, line: 'Fin.' },
-    ]);
-  }
+  console.info("Achievement: You did not the cat.");
+  S.meta.cutscene = true;
+  S.canvas.cats = [];
+  S.story.narrator.addLines([
+    { predicate: 0, duration: 3000, line: 'You did not the cat.' },
+    { predicate: 0, duration: 3000, line: 'Thank you for listening!!!' },
+    { predicate: 0, duration: 3000, line: '<i>You have unlocked the Auto skill</i>', callback: endPlaythrough },
+    { predicate: 0, line: 'Fin.' },
+  ]);
 };
 
 const storyMegacat = () => {
-  // TODO: Megacat Story
+  console.info("Achievement: You reached the MegaCat.");
+  S.meta.cutscene = true;
+  S.econ.drain = 10000;
+  S.story.narrator.addLines([
+    { predicate: 0, duration: 15000, line: "WHAT. IS. THAT. IT'S A MEGACAT" },
+    { predicate: 0, duration: 15000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
+    { predicate: 0, duration: 15000, line: 'Quick, go get the CATNIP' },
+    { predicate: 0, duration: 15000, line: 'We need to FEED THE BEAST' },
+    { predicate: 0, duration: 3000, line: '<i>You have unlocked the Catnip skill</i>', callback: endPlaythrough },
+    { predicate: 0, line: 'Fin.' },
+  ]);
 };
 
 const endPlaythrough = () => {
@@ -1023,47 +1023,50 @@ const tickInterval = setInterval(() => {
     }
 
     // Milestones
-    if (!S.story.unlocked.includes('s7')) {
-      if (S.econ.balance > 10 ** 6) {
-        storyMegacat();
-        S.story.unlocked.push('s7');
+    if (!S.meta.cutscene) {
+      if (!S.story.unlocked.includes('s7')) {
+        if (S.econ.balance > 10 ** 6) {
+          S.story.unlocked.push('s7');
+          storyMegacat();
+        }
       }
-    }
-    if (!S.story.unlocked.includes('s11')) {
-      if (S.econ.balance > 10 ** 9) {
-        // TODO Gigacat
-        S.story.unlocked.push('s11');
+      if (!S.story.unlocked.includes('s11')) {
+        if (S.econ.balance > 10 ** 9) {
+          // TODO Gigacat
+          S.story.unlocked.push('s11');
+        }
       }
-    }
-    if (!S.story.unlocked.includes('s12')) {
-      if (S.econ.balance > 10 ** 12) {
-        // TODO Teracat
-        S.story.unlocked.push('s12');
+      if (!S.story.unlocked.includes('s12')) {
+        if (S.econ.balance > 10 ** 12) {
+          // TODO Teracat
+          S.story.unlocked.push('s12');
+        }
       }
-    }
-    if (!S.story.unlocked.includes('s10')) {
-      if (S.econ.balance > 10 ** 15) {
-        // TODO Petacat
-        S.story.unlocked.push('s10');
+      if (!S.story.unlocked.includes('s10')) {
+        if (S.econ.balance > 10 ** 15) {
+          // TODO Petacat
+          S.story.unlocked.push('s10');
+        }
       }
-    }
-    if (!S.story.unlocked.includes('s8')) {
-      if (S.econ.balance > 10 ** 18) {
-        // TODO Exacat
-        S.story.unlocked.push('s8');
+      if (!S.story.unlocked.includes('s8')) {
+        if (S.econ.balance > 10 ** 18) {
+          // TODO Exacat
+          S.story.unlocked.push('s8');
+        }
       }
-    }
-    if (!S.story.unlocked.includes('s9')) {
-      if (S.econ.balance > 10 ** 21) {
-        // TODO Infinity
-        S.story.unlocked.push('s9');
+      if (!S.story.unlocked.includes('s9')) {
+        if (S.econ.balance > 10 ** 21) {
+          // TODO Infinity
+          S.story.unlocked.push('s9');
+        }
       }
-    }
 
-    // Did not the cat
-    if (!S.story.unlocked.includes('s13')) {
-      if (S.econ.balance == 1 && elapsedTime > 10000) {
-        storyAutocat();
+      // Did not the cat
+      if (!S.story.unlocked.includes('s13')) {
+        if (S.econ.balance == 1 && elapsedTime > 10000) {
+          S.story.unlocked.push('s13'); 
+          storyAutocat();
+        }
       }
     }
   } else {
@@ -1086,7 +1089,7 @@ const tickInterval = setInterval(() => {
   }
 
   if (S.econ.drain > 0) {
-    updateBalance(S.econ.drain);
+    updateBalance(-S.econ.drain);
   }
 }, 1000);
 
