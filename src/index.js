@@ -437,11 +437,24 @@ class Skill {
     if (this.enabled) {
       this.enable()
     }
+    this.debounce = null;
   }
 
   assign() {
     if (['Q', 'W', 'E', 'R'].includes(this.key)) {
-      E[`Key${this.key}`].addEventListener('click', (event) => { this.use(); event.stopPropagation() })
+      E[`Key${this.key}`].addEventListener('mousedown', (event) => {
+        if (!this.debounce) {
+          this.debounce = setInterval(() => {
+            this.use();
+          }, 100);
+        }
+        event.stopPropagation();
+      })
+      E[`Key${this.key}`].addEventListener('mouseup', (event) => {
+        clearInterval(this.debounce);
+        this.debounce = null;
+        event.stopPropagation();
+      })
       E[`Key${this.key}`].title = `(${this.key}) ${this.label}`
     }
   }
@@ -932,7 +945,6 @@ const storyAutocat = () => {
 
 const storyMegacat = () => {
   console.info("Achievement: You reached the MegaCat.");
-  S.meta.cutscene = true;
   S.econ.drain = 10000;
   S.story.narrator.addLines([
     { predicate: 0, duration: 15000, line: "WHAT. IS. THAT. IT'S A MEGACAT" },
@@ -1121,17 +1133,24 @@ E.clear.addEventListener('click', (event) => {
 const hotkeydown = (event) => {
   if (S.meta.active) {
     if (['KeyQ', 'KeyW', 'KeyE', 'KeyR'].includes(event.code)) {
-      document.getElementById(event.code).click();
+      document.getElementById(event.code).dispatchEvent(new Event('mousedown'));
     } else if (event.code === 'Space' || event.key === ' ') {
       patCat();
     }
+  }
+};
+document.addEventListener('keydown', hotkeydown, false);
+
+const hotkeyup = (event) => {
+  if (['KeyQ', 'KeyW', 'KeyE', 'KeyR'].includes(event.code)) {
+    document.getElementById(event.code).dispatchEvent(new Event('mouseup'));
   }
 
   if (event.code === 'Escape' || event.key === 'Escape') {
     E.pause.click();
   }
 };
-document.addEventListener('keydown', hotkeydown, false);
+document.addEventListener('keyup', hotkeyup, false);
 
 /* ========= Init ========= */
 // Check for Meta In-App Browsers
@@ -1146,3 +1165,6 @@ if (navigator.userAgent.match(/FBAN|FBAV|Instagram/i)) {
 } else {
   loadGame() || startGame();
 }
+
+/* ========= Debug ========= */
+// S.story.unlocked = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11', 's12', 's13']
