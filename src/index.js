@@ -193,7 +193,7 @@ const updateHud = () => {
   E.interest.innerHTML = `${S.econ.interest > 0 ? '&#x1F4C8; ' + (S.econ.interest.toFixed(2)) + '% ps' : ''}`;
   E.stats.innerHTML = `
     ${S.econ.base > 1 ? '&#x270B; ' + notation(S.econ.base, true) : ''}&nbsp;
-    ${S.econ.mult > 100 ? ' &#x274E; ' + (S.econ.mult > 10**5 ? notation(S.econ.mult / 100, true) : (S.econ.mult / 100).toFixed(1)) : ''}
+    ${S.econ.mult > 100 ? ' &#x274E; ' + (S.econ.mult > 10 ** 5 ? notation(S.econ.mult / 100, true) : (S.econ.mult / 100).toFixed(1)) : ''}
   `;
   ['Q', 'W', 'E', 'R'].forEach(key => {
     if (S.skills.bindings[key]) {
@@ -202,7 +202,7 @@ const updateHud = () => {
       }
       let price = '';
       if (S.skills.bindings[key].cooldown > 0) {
-        price = (((S.skills.bindings[key].timestamp + (S.skills.bindings[key].cooldown * S.econ.discount / 100)) - (new Date()).getTime())/1000).toFixed(0);
+        price = (((S.skills.bindings[key].timestamp + (S.skills.bindings[key].cooldown * S.econ.discount / 100)) - (new Date()).getTime()) / 1000).toFixed(0);
         if (price <= 0) {
           price = 'Ready';
         } else {
@@ -657,7 +657,7 @@ class AntiCatterSkill extends Skill {
     const now = (new Date()).getTime()
     if (now > (this.timestamp + (this.cooldown * S.econ.discount / 100))) {
       this.timestamp = now;
-      if (Math.random() > 1/S.meta.playthrough) {
+      if (Math.random() > 1 / S.meta.playthrough) {
         updateBalance(S.econ.balance) // Double
       } else {
         updateBalance(1 - S.econ.balance) // Nothing
@@ -680,7 +680,7 @@ class NekroSkill extends Skill {
   use() {
     if (this.cost == 0) {
       this.cost = 1
-      S.econ.discount = 100 - 5*(S.story.unlocked.length)
+      S.econ.discount = 100 - 5 * (S.story.unlocked.length)
     }
   }
 }
@@ -809,7 +809,7 @@ const skillRegister = {
     generator: (props) => { return new AntiCatterSkill(props) },
     name: 'Anti-Catter',
     icon: '&#x2728;',
-    effect: () => { return `${(100 - 100/S.meta.playthrough).toFixed(0)}% x2` },
+    effect: () => { return `${(100 - 100 / S.meta.playthrough).toFixed(0)}% x2` },
     label: 'Anti-Catter: Double or Nothing; 30 second cooldown. Chances of success permanently increase with every playthrough.',
   },
   s10: {
@@ -845,11 +845,10 @@ const skillRegister = {
 /* ========= Dialogue ========= */
 class Narrator {
   constructor(props) {
-    this.currentLine = props?.currentLine || '';
+    this.currentLine = props?.currentLine || { line: 'please DO NOT the cat' };
+    this.queue = props?.queue || [];
     this.playthrough = props.playthrough;
-    this.dialogLines = props?.dialogLines;
-    this.skillLines = props?.skillLines;
-    if (!this.dialogLines && !this.skillLines) {
+    if (this.queue.length == 0) {
       this.loadLines(this.playthrough);
     }
   }
@@ -863,95 +862,55 @@ class Narrator {
       { predicate: 55, line: "PLEASE?" },
       { predicate: 70, line: "Okay." },
       { predicate: 85, line: "You're really doing this" },
-      { predicate: 120, line: "Look..." },
-      { predicate: 200, line: "I can't say I didn't warn you" },
+      { predicate: 130, line: "Look..." },
+      { predicate: 250, line: "I can't say I didn't warn you" },
       { predicate: 400, line: "But if you're going to commit..." },
       { predicate: 600, line: "You should do it properly." },
       { predicate: 800, line: "The better you treat them, the better they'll treat you" },
-      { predicate: 1100, line: "Give and you shall receive" },
-      { predicate: 1500, line: "It's just the way the universe works" },
-      { predicate: 2000, line: "Or at least that's what I was told..." },
-      { predicate: 4000, line: "We sure have a lot of cats now. Have you ever wondered where they come from?" },
-      { predicate: 7000, line: "When a mommy and daddy cat love each other very much..." },
-      { predicate: 11000, line: "But really. Is this bottomless ball of cats not a mystery to you?" },
-      { predicate: 20000, line: "The truth is..." },
+      { predicate: 1300, line: "Give and you shall receive" },
+      { predicate: 2500, line: "It's just the way the universe works" },
+      { predicate: 4000, line: "Or at least that's what I was told..." },
+      { predicate: 6000, line: "We sure have a lot of cats now. Have you ever wondered where they come from?" },
+      { predicate: 8000, line: "When a mommy and daddy cat love each other very much..." },
+      { predicate: 13000, line: "But really. Is this bottomless ball of cats not a mystery to you?" },
+      { predicate: 25000, line: "The truth is..." },
       { predicate: 40000, line: "...something along the lines of..." },
       { predicate: 70000, line: "<i>*pages flicking*</i>" },
       { predicate: 100000, line: "...I don't know either." },
       { predicate: 200000, line: "..." },
       { predicate: 400000, line: "Hey. Don't judge me. It's my first day!" },
       { predicate: 700000, line: "What's the worst that could possibly happen?" },
-      { predicate: 10 ** 6, line: "WHAT. IS. THAT. IT'S A MEGACAT", include: () => { return (playthrough == 1) }, },
+      { predicate: 10 ** 6, line: "WHAT. IS. THAT. IT'S A MEGACAT" },
       { predicate: Infinity, line: "Ironically, your curiosity got us killed by cats." },
     ];
 
-    // TODO: Rework this
-    const skillLines = [
-      {
-        predicate: () => { return (S.skills.bindings.Q?.level == 0 && S.econ.balance > S.skills.bindings.Q?.cost) },
-        line: `I'll find someone to take them off your HANDS`,
-        include: () => { return (S.skills.bindings.Q?.id == 's1') },
-      },
-      {
-        predicate: () => { return (S.skills.bindings.Q?.level == 1 && S.econ.balance < (S.skills.bindings.Q?.cost)) },
-        line: `OH NO. THIS IS WORSE!`,
-        include: () => { return (S.skills.bindings.Q?.id == 's1') },
-      },
-      {
-        predicate: () => { return (S.skills.bindings.W?.level == 0 && S.econ.balance > S.skills.bindings.W?.cost) },
-        line: `They'll go out and tell others about the good TIMES`,
-        include: () => { return (S.skills.bindings.W?.id == 's3') },
-      },
-      {
-        predicate: () => { return (S.skills.bindings.E?.level == 0 && S.econ.balance > S.skills.bindings.E?.cost) },
-        line: `They want to have kittens! Maybe we should give them space to GROW?`,
-        include: () => { return (S.skills.bindings.E?.id == 's5') },
-      },
-    ];
-
-    this.dialogLines = dialogLines.filter(line => {
-      if (!line.include || line.include()) {
-        return true
-      }
-    })
-
-    this.skillLines = skillLines.filter(line => {
+    this.queue = dialogLines.filter(line => {
       if (!line.include || line.include()) {
         return true
       }
     })
   }
 
+  addLines(lines) {
+    this.queue.unshift(...lines);
+  }
+
   nextLine() {
-    const skillLines = this.skillLines.filter((line) => {
-      if (typeof line.predicate == 'number' && S.econ.balance > line.predicate) {
-        return true
-      } else if (typeof line.predicate == 'function' && line.predicate()) {
-        return true
-      }
-    })
-    if (skillLines.length > 0) {
-      if (this.currentLine != skillLines[skillLines.length - 1].line) {
-        this.currentLine = skillLines[skillLines.length - 1].line
-      }
-    } else {
-      const dialogLines = this.dialogLines.filter((line) => {
-        if (typeof line.predicate == 'number' && S.econ.balance >= line.predicate) {
-          return true
-        } else if (typeof line.predicate == 'function' && line.predicate()) {
-          return true
+    if (!this.currentLine.duration || (new Date()).getTime() > (this.currentLine.timestamp + this.currentLine.duration)) {
+      if (this.queue.length > 0) {
+        if ((typeof (this.queue[0].predicate) == 'number' && S.econ.balance > this.queue[0].predicate) || (typeof (this.queue[0].predicate) == 'function' && this.queue[0].predicate())) {
+          if (this.currentLine.callback) {
+            this.currentLine.callback();
+          }
+          this.currentLine = this.queue[0];
+          this.currentLine.timestamp = (new Date().getTime());
+          this.sayLine(this.currentLine.line);
+          this.queue.shift();
         }
-      })
-      if (dialogLines.length > 0) {
-        if (this.currentLine != dialogLines[0].line) {
-          this.currentLine = dialogLines[0].line
-          this.dialogLines = this.dialogLines.filter((line) => {
-            return (line.line != this.currentLine)
-          })
-        }
+      } else {
+        this.currentLine = { line: '...' };
       }
     }
-    this.sayLine(this.currentLine)
   }
 
   sayLine(line) {
@@ -961,22 +920,24 @@ class Narrator {
 
 /* ========= Story Events ========= */
 const storyAutocat = () => {
-  console.info("Achievement: You did not the cat.");
-  S.meta.cutscene = true;
-  S.canvas.cats = [];
-  S.story.narrator.sayLine('You did not the cat');
-  setTimeout(() => {
-    if (!S.story.unlocked.includes('s13')) {
-      S.story.unlocked.push('s13'); // Unlock the Auto Skill
-      S.story.narrator.sayLine('Thank you for listening!!');
-      setTimeout(() => {
-        S.story.narrator.sayLine('<i>You have unlocked the Auto skill</i>');
-        setTimeout(() => {
+  if (S.meta.cutscene == false) {
+    console.info("Achievement: You did not the cat.");
+    S.meta.cutscene = true;
+    S.canvas.cats = [];
+    S.story.narrator.addLines([
+      { predicate: 0, duration: 3000, line: 'You did not the cat.' },
+      { predicate: 0, duration: 3000, line: 'Thank you for listening!!!' },
+      { predicate: 0, duration: 3000, line: '<i>You have unlocked the Auto skill</i>', callback: () => {
+          // Unlock the Auto Skill
+          if (!S.story.unlocked.includes('s13')) {
+            S.story.unlocked.push('s13'); 
+          }
           endPlaythrough();
-        }, 3000)
-      }, 3000)
-    }
-  }, 3000)
+        }
+      },
+      { predicate: 0, line: 'Fin.' },
+    ]);
+  }
 };
 
 const storyMegacat = () => {
@@ -1040,6 +1001,7 @@ const tickInterval = setInterval(() => {
         S.story.unlocked.push('s1');
         S.skills.selected.push('s1');
         S.skills.bindings.Q = skillRegister['s1'].generator({ key: 'Q' });
+        S.story.narrator.addLines([{ predicate: 0, line: "I'll find someone to take them off your HANDS" }]);
       }
     }
     if (!S.story.unlocked.includes('s3')) {
@@ -1047,6 +1009,8 @@ const tickInterval = setInterval(() => {
         S.story.unlocked.push('s3');
         S.skills.selected.push('s3');
         S.skills.bindings.W = skillRegister['s3'].generator({ key: 'W' });
+        S.story.narrator.addLines([{ predicate: 0, line: "They'll go out and tell others about the good TIMES" }]);
+        S.story.narrator.sayLine("")
       }
     }
     if (!S.story.unlocked.includes('s5')) {
@@ -1054,6 +1018,7 @@ const tickInterval = setInterval(() => {
         S.story.unlocked.push('s5');
         S.skills.selected.push('s5');
         S.skills.bindings.E = skillRegister['s5'].generator({ key: 'E' });
+        S.story.narrator.addLines([{ predicate: 0, line: "They want to have kittens! Maybe we should give them space to GROW?" }]);
       }
     }
 
@@ -1094,7 +1059,7 @@ const tickInterval = setInterval(() => {
         S.story.unlocked.push('s9');
       }
     }
-    
+
     // Did not the cat
     if (!S.story.unlocked.includes('s13')) {
       if (S.econ.balance == 1 && elapsedTime > 10000) {
@@ -1156,9 +1121,11 @@ const hotkeydown = (event) => {
       document.getElementById(event.code).click();
     } else if (event.code === 'Space' || event.key === ' ') {
       patCat();
-    } else if (event.code === 'Escape' || event.key === 'Escape') {
-      E.pause.click();
     }
+  }
+
+  if (event.code === 'Escape' || event.key === 'Escape') {
+    E.pause.click();
   }
 };
 document.addEventListener('keydown', hotkeydown, false);
