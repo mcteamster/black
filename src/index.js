@@ -442,20 +442,26 @@ class Skill {
 
   assign() {
     if (['Q', 'W', 'E', 'R'].includes(this.key)) {
-      E[`Key${this.key}`].addEventListener('mousedown', (event) => {
+      E[`Key${this.key}`].title = `(${this.key}) ${this.label}`
+
+      const startDebounce = (event) => {
         if (!this.debounce) {
           this.debounce = setInterval(() => {
             this.use();
           }, 100);
         }
         event.stopPropagation();
-      })
-      E[`Key${this.key}`].addEventListener('mouseup', (event) => {
+      }
+      E[`Key${this.key}`].addEventListener('mousedown', startDebounce)
+      E[`Key${this.key}`].addEventListener('touchstart', startDebounce)
+
+      const endDebounce = (event) => {
         clearInterval(this.debounce);
         this.debounce = null;
         event.stopPropagation();
-      })
-      E[`Key${this.key}`].title = `(${this.key}) ${this.label}`
+      }
+      E[`Key${this.key}`].addEventListener('mouseup', endDebounce)
+      E[`Key${this.key}`].addEventListener('touchend', endDebounce)
     }
   }
 
