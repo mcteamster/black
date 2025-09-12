@@ -101,7 +101,7 @@ canvas {
   padding: 0.25em;
   margin: 0;
   font-size: 2em;
-  background-color: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.75);
 }
 
 #launch {

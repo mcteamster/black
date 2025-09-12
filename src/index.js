@@ -15,8 +15,8 @@ let S = {
     total: 0, // Cats accumulated over all time
   },
   meta: {
-    active: true,
-    cutscene: false,
+    active: true, // In Game
+    freeze: false, // Disable Interactivity
     magnitude: 0,
     mute: false,
     playthrough: 1,
@@ -39,6 +39,7 @@ let S = {
   },
   story: {
     narrator: null,
+    milestones: [],
     unlocked: [],
   },
 };
@@ -189,8 +190,12 @@ const notation = (x, short) => {
 };
 
 const updateHud = () => {
-  E.counter.innerHTML = (S.meta.playthrough == 1 && S.econ.balance == 1) ? '' : `${blackCat} ${notation(S.econ.balance)}`;
-  E.interest.innerHTML = `${S.econ.interest > 0 ? '&#x1F4C8; ' + (S.econ.interest.toFixed(2)) + '% ps' : ''}`;
+  E.counter.innerHTML = ((S.meta.playthrough == 1 && S.econ.balance == 1) || S.econ.balance <= 0) ? '' : `${blackCat} ${notation(S.econ.balance)}`;
+  E.interest.innerHTML = `
+    ${S.econ.interest > 0 ? '&#x1F4C8; ' + (S.econ.interest.toFixed(2)) + '% ps' : ''}
+    ${S.econ.drain > 0 ? '&nbsp;&#x1F4C9 ' + (notation(S.econ.drain, true)) + ' ps' : ''}
+  `;
+  S.econ.drain > 0 ? E.dialogue.style.background = "rgba(255, 0, 0, 0.75)" :   E.dialogue.style.background = "rgba(0, 0, 0, 0.75)";
   E.stats.innerHTML = `
     ${S.econ.base > 1 ? '&#x270B; ' + notation(S.econ.base, true) : ''}&nbsp;
     ${S.econ.mult > 100 ? ' &#x274E; ' + (S.econ.mult > 10 ** 5 ? notation(S.econ.mult / 100, true) : (S.econ.mult / 100).toFixed(1)) : ''}
@@ -221,7 +226,6 @@ const updateHud = () => {
     }
   })
   E.mute.innerHTML = S.meta.mute ? '&#x1F507;' : '&#x1F509;';
-  S.story.narrator.nextLine();
 };
 
 const updateLauncher = () => {
@@ -277,22 +281,24 @@ const updateMagnitude = () => {
 };
 
 const updateBalance = (cats) => {
-  if (S.meta.active && !S.meta.cutscene) {
+  if (S.meta.active) {
     // Scaling
-    if (cats == Infinity) {
-      S.econ.cats = Infinity;
-      S.econ.total = Infinity;
-      updateHud();
-      return
-    } else if (cats > 0) {
+    if (cats > 0) {
       S.econ.total += cats;
     }
     S.econ.balance += cats;
     const unitPower = updateMagnitude();
-    updateHud();
 
-    // Render New Cats, Remove Oldest
-    if (cats > 0) {
+    if (!S.meta.freeze && S.econ.balance <= 0) {
+      S.meta.freeze = true;
+      S.canvas.cats = [];
+      S.story.narrator.addLines([
+        { predicate: -Infinity, duration: 3000, line: "Oh no, we lost all the cats...", },
+        { predicate: -Infinity, duration: 3000, line: "Man, my boss is gonna be so mad.", callback: endPlaythrough },
+        { predicate: -Infinity, line: 'Fin.' },
+      ]);
+    } else if (cats > 0) {
+      // Render New Cats, Remove Oldest
       const newCats = cats / 10 ** unitPower;
       for (let i = 0; i < newCats; i++) {
         if (S.canvas.cats.length < 1024) {
@@ -315,6 +321,8 @@ const updateBalance = (cats) => {
         })
       }
     }
+
+    updateHud();
   }
 };
 
@@ -503,7 +511,11 @@ class HandsSkill extends Skill {
 
       // Unlock upgraded skill
       if (this.level >= 10000 && !S.story.unlocked.includes('s2')) {
-        S.story.unlocked.push('s2')
+        S.story.unlocked.push('s2');
+        S.story.narrator.addLines([
+          { predicate: 0, duration: 3000, line: "The cats have industrialised." },
+          { predicate: 0, duration: 3000, line: "<i>You have unlocked the Factory skill</i>" },
+        ]);
       }
     }
   }
@@ -546,7 +558,11 @@ class TimesSkill extends Skill {
 
       // Unlock upgraded skill
       if (this.level >= 1000 && !S.story.unlocked.includes('s4')) {
-        S.story.unlocked.push('s4')
+        S.story.unlocked.push('s4');
+        S.story.narrator.addLines([
+          { predicate: 0, duration: 3000, line: "The cats have developed propaganda." },
+          { predicate: 0, duration: 3000, line: "<i>You have unlocked the Media skill</i>" },
+        ]);
       }
     }
   }
@@ -589,7 +605,11 @@ class GrowSkill extends Skill {
 
       // Unlock upgraded skill
       if (this.level >= 100 && !S.story.unlocked.includes('s6')) {
-        S.story.unlocked.push('s6')
+        S.story.unlocked.push('s6');
+        S.story.narrator.addLines([
+          { predicate: 0, duration: 3000, line: "The cats have advanced veterinary science." },
+          { predicate: 0, duration: 3000, line: "<i>You have unlocked the Vets skill</i>" },
+        ]);
       }
     }
   }
@@ -888,8 +908,8 @@ class Narrator {
     }
   }
 
-  loadLines(playthrough) {
-    const dialogLines = [
+  loadLines() {
+    this.queue = [
       { predicate: 0, line: 'please DO NOT the cat' },
       { predicate: 13, line: 'AHHH! What are you doing?' },
       { predicate: 25, line: "HEY!" },
@@ -898,31 +918,25 @@ class Narrator {
       { predicate: 70, line: "Okay." },
       { predicate: 85, line: "You're really doing this" },
       { predicate: 130, line: "Look..." },
-      { predicate: 250, line: "I can't say I didn't warn you" },
+      { predicate: 200, line: "I can't say I didn't warn you" },
       { predicate: 400, line: "But if you're going to commit..." },
       { predicate: 600, line: "You should do it properly." },
       { predicate: 800, line: "The better you treat them, the better they'll treat you" },
       { predicate: 1300, line: "Give and you shall receive" },
-      { predicate: 2500, line: "It's just the way the universe works" },
+      { predicate: 2000, line: "It's just the way the universe works" },
       { predicate: 4000, line: "Or at least that's what I was told..." },
       { predicate: 6000, line: "We sure have a lot of cats now. Have you ever wondered where they come from?" },
       { predicate: 8000, line: "When a mommy and daddy cat love each other very much..." },
       { predicate: 13000, line: "But really. Is this bottomless ball of cats not a mystery to you?" },
-      { predicate: 25000, line: "The truth is..." },
+      { predicate: 20000, line: "The truth is..." },
       { predicate: 40000, line: "...something along the lines of..." },
       { predicate: 70000, line: "<i>*pages flicking*</i>" },
       { predicate: 100000, line: "...I don't know either." },
       { predicate: 200000, line: "..." },
       { predicate: 400000, line: "Hey. Don't judge me. It's my first day!" },
       { predicate: 700000, line: "What's the worst that could possibly happen?" },
-      { predicate: Infinity, line: "Ironically, your curiosity got us killed by cats." },
+      { predicate: 10**100, line: "Fin." },
     ];
-
-    this.queue = dialogLines.filter(line => {
-      if (!line.include || line.include()) {
-        return true
-      }
-    })
   }
 
   addLines(lines) {
@@ -953,27 +967,61 @@ class Narrator {
 }
 
 /* ========= Story Events ========= */
-const storyAutocat = () => {
-  console.info("Achievement: You did not the cat.");
-  S.meta.cutscene = true;
-  S.canvas.cats = [];
+const storyMegacat = () => {
+  S.story.milestones.push('Megacat')
+  if (!S.story.unlocked.includes('s7')) {
+    S.skills.selected.push('s7');
+    S.story.unlocked.push('s7');
+    S.skills.bindings.R = skillRegister['s7'].generator({ key: 'R' });
+  }
+  S.econ.drain = 50000;
   S.story.narrator.addLines([
-    { predicate: 0, duration: 3000, line: 'You did not the cat.' },
-    { predicate: 0, duration: 3000, line: 'Thank you for listening!!!' },
-    { predicate: 0, duration: 3000, line: '<i>You have unlocked the Auto skill</i>', callback: endPlaythrough },
-    { predicate: 0, line: 'Fin.' },
+    { predicate: 0, duration: 3000, line: "WHAT. IS. THAT?" },
+    { predicate: 0, duration: 3000, line: "It's a... MEGACAT" },
+    { predicate: 0, duration: 3000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
+    { predicate: 0, duration: 3000, line: 'Quick, go get the CATNIP' },
+    { predicate: 0, duration: 3000, line: 'We need to FEED THE BEAST' },
+    { predicate: 0, duration: 3000, line: 'KEEP FEEDING IT' },
+    { predicate: 0, duration: 3000, line: 'WE HAVE TO SAVE THE CATS' },
+    { predicate: 0, duration: 3000, line: 'ALMOST THERE!!!', callback: () => {
+        S.econ.drain = 0;
+      }
+    },
+    { predicate: 0, duration: 3000, line: 'Phew! That was a close one.' },
   ]);
 };
 
-const storyMegacat = () => {
-  console.info("Achievement: You reached the MegaCat.");
-  S.econ.drain = 10000;
+// const storyGigacat = () => {
+//   S.story.milestones.push('Gigacat')
+//   S.econ.drain = 50000;
+//   S.story.narrator.addLines([
+//     { predicate: 0, duration: 3000, line: "WHAT. IS. THAT?" },
+//     { predicate: 0, duration: 3000, line: "It's a... MEGACAT" },
+//     { predicate: 0, duration: 3000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
+//     { predicate: 0, duration: 3000, line: 'Quick, go get the CATNIP' },
+//     { predicate: 0, duration: 3000, line: 'We need to FEED THE BEAST' },
+//     { predicate: 0, duration: 3000, line: 'KEEP FEEDING IT' },
+//     { predicate: 0, duration: 3000, line: 'WE HAVE TO SAVE THE CATS' },
+//     { predicate: 0, duration: 3000, line: 'ALMOST THERE!!!', callback: () => {
+//         S.econ.drain = 0;
+//         if (!S.story.unlocked.includes('s11')) {
+//           S.skills.selected.push('s11');
+//           S.story.unlocked.push('s11');
+//         }
+//       }
+//     },
+//     { predicate: 0, duration: 3000, line: 'Phew! That was a close one.' },
+//   ]);
+// };
+
+const storyAutocat = () => {
+  S.meta.freeze = true;
+  S.canvas.cats = [];
   S.story.narrator.addLines([
-    { predicate: 0, duration: 15000, line: "WHAT. IS. THAT. IT'S A MEGACAT" },
-    { predicate: 0, duration: 15000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
-    { predicate: 0, duration: 15000, line: 'Quick, go get the CATNIP' },
-    { predicate: 0, duration: 15000, line: 'We need to FEED THE BEAST' },
-    { predicate: 0, duration: 3000, line: '<i>You have unlocked the Catnip skill</i>', callback: endPlaythrough },
+    { predicate: 0, duration: 3000, line: 'You did not the cat.' },
+    { predicate: 0, duration: 3000, line: 'Thanks for watching it!' },
+    { predicate: 0, duration: 3000, line: "You've saved me from a lot of trouble. Here have this:" },
+    { predicate: 0, duration: 3000, line: '<i>You have unlocked the Auto skill</i>', callback: endPlaythrough },
     { predicate: 0, line: 'Fin.' },
   ]);
 };
@@ -991,10 +1039,12 @@ const endPlaythrough = () => {
     mult: 100, // Multiplier %
     total: 0, // Cats accumulated over all time
   };
-  S.meta.cutscene = false;
   S.meta.active = false;
+  S.meta.freeze = false;
   S.meta.magnitude = 0;
   S.meta.playthrough += 1;
+  S.story.milestones = [];
+  S.story.narrator = new Narrator({ playthrough: S.meta.playthrough });
   saveGame();
 };
 
@@ -1010,10 +1060,12 @@ setInterval(renderFrame, 50); // 20 FPS
 
 // Economy
 const patCat = () => {
-  updateBalance(S.econ.base * S.econ.mult / 100);
-  // Trigger Meow Sound Here
-  if (!S.meta.mute) {
-    meows[Math.floor(meows.length * Math.random())].play();
+  if (!S.meta.freeze) {
+    updateBalance(S.econ.base * S.econ.mult / 100);
+    // Trigger Meow Sound Here
+    if (!S.meta.mute && S.meta.active) {
+      meows[Math.floor(meows.length * Math.random())].play();
+    }
   }
 };
 E.canvas.addEventListener('click', patCat);
@@ -1057,50 +1109,38 @@ const tickInterval = setInterval(() => {
     }
 
     // Milestones
-    if (!S.meta.cutscene) {
-      if (!S.story.unlocked.includes('s7')) {
-        if (S.econ.balance > 10 ** 6) {
-          S.story.unlocked.push('s7');
-          storyMegacat();
-        }
-      }
-      if (!S.story.unlocked.includes('s11')) {
-        if (S.econ.balance > 10 ** 9) {
-          // TODO Gigacat
-          S.story.unlocked.push('s11');
-        }
-      }
-      if (!S.story.unlocked.includes('s12')) {
-        if (S.econ.balance > 10 ** 12) {
-          // TODO Teracat
-          S.story.unlocked.push('s12');
-        }
-      }
-      if (!S.story.unlocked.includes('s10')) {
-        if (S.econ.balance > 10 ** 15) {
-          // TODO Petacat
-          S.story.unlocked.push('s10');
-        }
-      }
-      if (!S.story.unlocked.includes('s8')) {
-        if (S.econ.balance > 10 ** 18) {
-          // TODO Exacat
-          S.story.unlocked.push('s8');
-        }
-      }
-      if (!S.story.unlocked.includes('s9')) {
-        if (S.econ.balance > 10 ** 21) {
-          // TODO Infinity
-          S.story.unlocked.push('s9');
-        }
-      }
+    if (!S.story.milestones.includes('Infinity') && S.econ.balance > 10 ** 100) {
+      // storyInfinity();
+    } else if (!S.story.milestones.includes('Exacat') && S.econ.balance > 10 ** 18) {
+      // storyExacat();
+    } else if (!S.story.milestones.includes('Petacat') && S.econ.balance > 10 ** 15) {
+      // storyPetacat();
+    } else if (!S.story.milestones.includes('Teracat') && S.econ.balance > 10 ** 12) {
+      // storyTeracat();
+    } else if (!S.story.milestones.includes('Gigacat') && S.econ.balance > 10 ** 9) {
+      // storyGigacat();
+    } else if (!S.story.milestones.includes('Megacat') && S.econ.balance > 10 ** 6) {
+      storyMegacat();
+    }
 
-      // Did not the cat
-      if (!S.story.unlocked.includes('s13')) {
-        if (S.econ.balance == 1 && elapsedTime > 10000) {
-          S.story.unlocked.push('s13'); 
-          storyAutocat();
-        }
+    // Infinity
+    if (!S.story.unlocked.includes('s9')) {
+      if (S.meta.drain == 0 && S.econ.balance > 10 ** 100 ) {
+        S.story.unlocked.push('s9');
+        E.body.style.background = 'black';
+        S.canvas.cats = [];
+        S.story.narrator.addLines([
+          { predicate: -Infinity, duration: 3000, line: "You've reach infinity.", callback: endPlaythrough },
+          { predicate: -Infinity, line: 'Fin.' },
+        ]);
+      }
+    }
+
+    // Did not the cat
+    if (!S.story.unlocked.includes('s13')) {
+      if (S.econ.balance == 1 && elapsedTime > 10000) {
+        S.story.unlocked.push('s13'); 
+        storyAutocat();
       }
     }
   } else {
@@ -1108,23 +1148,27 @@ const tickInterval = setInterval(() => {
   }
 
   // Econ
-  if (S.econ.interest > 0) {
-    updateBalance(Math.floor(S.econ.balance * S.econ.interest / 100));
-  } else {
-    updateHud();
-  }
+  if (!S.meta.freeze) {
+    if (S.econ.interest > 0) {
+      updateBalance(Math.floor(S.econ.balance * S.econ.interest / 100));
+    }
 
-  if (S.econ.auto > 0) {
-    for (let i = 0; i < S.econ.auto; i++) {
-      setTimeout(() => {
-        patCat();
-      }, 70 * i)
+    if (S.econ.auto > 0) {
+      for (let i = 0; i < S.econ.auto; i++) {
+        setTimeout(() => {
+          patCat();
+        }, 70 * i)
+      }
+    }
+
+    if (S.econ.drain > 0) {
+      updateBalance(-S.econ.drain);
     }
   }
 
-  if (S.econ.drain > 0) {
-    updateBalance(-S.econ.drain);
-  }
+  // Dialogue
+  updateHud();
+  S.story.narrator.nextLine();
 }, 1000);
 
 /* ========= Buttons ========= */
@@ -1190,3 +1234,5 @@ if (navigator.userAgent.match(/FBAN|FBAV|Instagram/i)) {
 
 /* ========= Debug ========= */
 // S.story.unlocked = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11', 's12', 's13']
+// S.econ.balance = 9.99 * 10**5
+// S.econ.drain = 1
