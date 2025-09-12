@@ -111,12 +111,12 @@ canvas {
 
 #instructions {
   min-height: 5em;
-  max-width: 25em;
+  max-width: 90%;
   padding: 1em;
 }
 
 #picker {
-  max-width: 25em;
+  max-width: 90%;
   flex-wrap: wrap;
 }
 
