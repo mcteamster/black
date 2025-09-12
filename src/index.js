@@ -437,31 +437,35 @@ class Skill {
     if (this.enabled) {
       this.enable()
     }
-    this.debounce = null;
+    this.repeat = null;
   }
 
   assign() {
     if (['Q', 'W', 'E', 'R'].includes(this.key)) {
       E[`Key${this.key}`].title = `(${this.key}) ${this.label}`
 
-      const startDebounce = (event) => {
-        if (!this.debounce) {
-          this.debounce = setInterval(() => {
+      const startRepeat = (event) => {
+        if (this.id == 's13') {
+          this.use();
+        } else if (!this.repeat) {
+          this.repeat = setInterval(() => {
             this.use();
-          }, 100);
+          }, 25);
         }
         event.stopPropagation();
       }
-      E[`Key${this.key}`].addEventListener('mousedown', startDebounce)
-      E[`Key${this.key}`].addEventListener('touchstart', startDebounce)
+      E[`Key${this.key}`].addEventListener('mousedown', startRepeat)
+      E[`Key${this.key}`].addEventListener('touchstart', startRepeat)
 
-      const endDebounce = (event) => {
-        clearInterval(this.debounce);
-        this.debounce = null;
+      const endRepeat = (event) => {
+        if (this.repeat) {
+          clearInterval(this.repeat);
+          this.repeat = null;
+        }
         event.stopPropagation();
       }
-      E[`Key${this.key}`].addEventListener('mouseup', endDebounce)
-      E[`Key${this.key}`].addEventListener('touchend', endDebounce)
+      E[`Key${this.key}`].addEventListener('mouseup', endRepeat)
+      E[`Key${this.key}`].addEventListener('touchend', endRepeat)
     }
   }
 
@@ -755,14 +759,26 @@ class AutoSkill extends Skill {
   }
 
   use() {
+    this.debounce = true;
     if (this.cost == 1) {
-      this.cost = 0
-      S.econ.auto = 0
+      setTimeout(() => {
+        if (this.debounce) {
+          this.cost = 0;
+          S.econ.auto = 0;
+          updateBalance(0);
+          this.flipping = false;
+        }
+      }, 500);
     } else {
-      this.cost = 1
-      S.econ.auto = S.story.unlocked.length
+      setTimeout(() => {
+        if (this.debounce) {
+          this.cost = 1;
+          S.econ.auto = S.story.unlocked.length;
+          updateBalance(0);
+          this.debounce = false;
+        }
+      }, 500);
     }
-    updateBalance(0)
   }
 }
 
@@ -1119,7 +1135,7 @@ E.pause.addEventListener('click', (event) => {
   event.stopPropagation();
 });
 E.mute.addEventListener('click', (event) => {
-  console.log('Toggling Mute');
+  console.debug('Toggling Mute');
   S.meta.mute = !S.meta.mute;
   updateHud();
   event.stopPropagation();
