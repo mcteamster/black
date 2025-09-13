@@ -39,7 +39,7 @@ let S = {
   },
   story: {
     narrator: null,
-    milestones: [],
+    milestone: 0,
     unlocked: [],
   },
 };
@@ -743,8 +743,9 @@ class PaydaySkill extends Skill {
 
   use() {
     if (this.cost == 0) {
-      this.cost = 1
-      S.econ.balance += 10 ** (S.story.unlocked.length)
+      this.cost = 1;
+      S.econ.balance += 10 ** (S.story.unlocked.length);
+      S.story.milestone = S.story.unlocked.length;
     }
   }
 }
@@ -975,7 +976,7 @@ class Narrator {
 
 /* ========= Story Events ========= */
 const storyMegacat = () => {
-  S.story.milestones.push('Megacat')
+  S.story.milestone = 6;
   if (!S.story.unlocked.includes('s7')) {
     S.skills.selected.push('s7');
     S.story.unlocked.push('s7');
@@ -1000,7 +1001,7 @@ const storyMegacat = () => {
 };
 
 const storyGigacat = () => {
-  S.story.milestones.push('Gigacat')
+  S.story.milestone = 9;
   S.econ.drain = 6 * 10 ** 7;
   S.story.narrator.addLines([
     // TODO: Lines
@@ -1025,7 +1026,7 @@ const storyGigacat = () => {
 };
 
 const storyTeracat = () => {
-  S.story.milestones.push('Teracat')
+  S.story.milestone = 12;
   S.econ.drain = 7 * 10 ** 10;
   S.story.narrator.addLines([
     // TODO: Lines
@@ -1050,7 +1051,7 @@ const storyTeracat = () => {
 };
 
 const storyPetacat = () => {
-  S.story.milestones.push('Petacat')
+  S.story.milestone = 15;
   S.econ.drain = 8 * 10 ** 13;
   S.story.narrator.addLines([
     // TODO: Lines
@@ -1075,7 +1076,7 @@ const storyPetacat = () => {
 };
 
 const storyExacat = () => {
-  S.story.milestones.push('Exacat')
+  S.story.milestone = 18;
   S.econ.drain = 10 ** 17;
   S.story.narrator.addLines([
     // TODO: Lines
@@ -1101,7 +1102,7 @@ const storyExacat = () => {
 
 const storyInfinity = () => {
   S.meta.freeze = true;
-  S.story.milestones.push('Infinity');
+  S.story.milestone = 100;
   E.body.style.background = 'black';
   E.counter.innerHTML = '';
   E.interest.innerHTML = '';
@@ -1159,7 +1160,7 @@ const endPlaythrough = () => {
   S.meta.freeze = false;
   S.meta.magnitude = 0;
   S.meta.playthrough += 1;
-  S.story.milestones = [];
+  S.story.milestone = 0;
   S.story.narrator = new Narrator();
   saveGame();
 };
@@ -1226,18 +1227,18 @@ const tickInterval = setInterval(() => {
     }
 
     // Milestones
-    if (!S.story.milestones.includes('Infinity') && S.econ.balance > 10 ** 100) {
-      storyInfinity();
-    } else if (!S.story.milestones.includes('Exacat') && S.econ.balance > 10 ** 18) {
-      storyExacat();
-    } else if (!S.story.milestones.includes('Petacat') && S.econ.balance > 10 ** 15) {
-      storyPetacat();
-    } else if (!S.story.milestones.includes('Teracat') && S.econ.balance > 10 ** 12) {
-      storyTeracat();
-    } else if (!S.story.milestones.includes('Gigacat') && S.econ.balance > 10 ** 9) {
-      storyGigacat();
-    } else if (!S.story.milestones.includes('Megacat') && S.econ.balance > 10 ** 6) {
-      storyMegacat();
+    if (S.meta.magnitude >= 100) {
+      S.story.milestone < 100 && storyInfinity();
+    } else if (S.meta.magnitude >= 18) {
+      S.story.milestone < 18 && storyExacat();
+    } else if (S.meta.magnitude >= 15) {
+      S.story.milestone < 15 && storyPetacat();
+    } else if (S.meta.magnitude >= 12) {
+      S.story.milestone < 12 && storyTeracat();
+    } else if (S.meta.magnitude >= 9) {
+      S.story.milestone < 9 && storyGigacat();
+    } else if (S.meta.magnitude >= 6) {
+      S.story.milestone < 6 && storyMegacat();
     }
 
     // Did not the cat
