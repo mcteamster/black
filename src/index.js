@@ -625,14 +625,14 @@ class VetsSkill extends Skill {
   constructor(props) {
     super({
       id: 's6',
-      cost: 10 ** 6,
+      cost: 10 ** 9,
       ...props,
     })
   }
 
   use() {
     if (this.buy()) {
-      this.cost *= (this.level + 1) // Factorial
+      this.cost *= (this.level + 1) * 10 // Factorial
       S.econ.interest += 1
       updateBalance(0)
     }
@@ -767,7 +767,9 @@ class WarSkill extends Skill {
       S.econ.base = 1000 * (S.story.unlocked.length)
       S.econ.mult = 1000 * (S.story.unlocked.length)
       S.econ.discount *= 2
-      S.story.milestone = 6; // Skip Mega
+      if (S.story.milestone == 0) {
+        S.story.milestone = 6
+      }
     }
   }
 }
@@ -848,7 +850,7 @@ const skillRegister = {
     name: 'Vets',
     icon: '&#x1F3E5;',
     effect: '+1% &#x1F4C8;',
-    label: 'Vets: Double the current Interest. Advances in modern feline medicine have increased life expectancy and kitten birth rates.',
+    label: 'Vets: Double the current Interest. Advances in modern feline medicine have increased life expectancy.',
   },
   s7: {
     generator: (props) => { return new CatnipSkill(props) },
@@ -861,15 +863,15 @@ const skillRegister = {
     generator: (props) => { return new SpaceSkill(props) },
     name: 'Space',
     icon: '&#x1F680;',
-    effect: `x10 ${blackCat}`,
-    label: 'Space: Launch an Expurrdition to the stars; 5 minute cooldown. After 5 minutes gain 10x the balance at launch time.',
+    effect: `x100 ${blackCat}`,
+    label: 'Space: Launch an Expurrdition to the stars; 1 minute cooldown. After 1 minute gain 100x the balance at launch time.',
   },
   s9: {
     generator: (props) => { return new AntiCatterSkill(props) },
     name: 'Anti-Catter',
     icon: '&#x2728;',
     effect: () => { return `${(100 - 100 / S.meta.playthrough).toFixed(0)}% x2` },
-    label: 'Anti-Catter: Double or Nothing; 30 second cooldown. Chances of success permanently increase with every playthrough.',
+    label: 'Anti-Catter: Double or Nothing; 5 second cooldown. Chances of success permanently increase with every playthrough.',
   },
   s10: {
     generator: (props) => { return new NekroSkill(props) },
