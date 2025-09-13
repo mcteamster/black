@@ -943,6 +943,27 @@ class Narrator {
       { predicate: 3 * 10 ** 7, line: "They seem... smarter" },
       { predicate: 1 * 10 ** 8, line: "It's like there's a cat society" },
       { predicate: 3 * 10 ** 8, line: "...I'm so not getting paid enough for this" },
+      { predicate: 3 * 10 ** 9, line: "I think they're calling it... Catitalism?" },
+      { predicate: 1 * 10 ** 10, line: "Imperium. Supremus. Felis." },
+      { predicate: 3 * 10 ** 10, line: "That's one real Cat Empire" },
+      { predicate: 1 * 10 ** 11, line: "Do you think they're satisfied?" },
+      { predicate: 3 * 10 ** 11, line: "I think they're hungry for more" },
+      { predicate: 3 * 10 ** 12, line: "What do they want after world domination?" },
+      { predicate: 3 * 10 ** 13, line: "They're building... some sort of structure" },
+      { predicate: 3 * 10 ** 14, line: "<i>*pages flicking frantically*</i>" },
+      { predicate: 3 * 10 ** 15, line: "This goes beyond my training" },
+      { predicate: 3 * 10 ** 16, line: "AND WHERE DO THEY KEEP COMING FROM?" },
+      { predicate: 3 * 10 ** 17, line: "They can't possibly be from Earth" },
+      { predicate: 10 ** 20, line: "Maybe they came from another planet?" },
+      { predicate: 10 ** 25, line: "Or another solar system?" },
+      { predicate: 10 ** 30, line: "Perhaps they just want to go home..." },
+      { predicate: 10 ** 45, line: "To a galaxy, far far away..." },
+      { predicate: 10 ** 40, line: "<i>*muffled phone call noises*</i>" },
+      { predicate: 10 ** 50, line: "Ok. Scratch that." },
+      { predicate: 10 ** 60, line: "There's more cats than matter in the universe." },
+      { predicate: 10 ** 70, line: "Don't even start thinking about the multiverse" },
+      { predicate: 10 ** 80, line: "We're beyond the laws of physics here" },
+      { predicate: 10 ** 90, line: "Can you just accept that? I want to go home." },
       { predicate: 10 ** 100, line: "<i>Fin.</i>" },
     ];
   }
@@ -1004,16 +1025,14 @@ const storyGigacat = () => {
   S.story.milestone = 9;
   S.econ.drain = 6 * 10 ** 7;
   S.story.narrator.addLines([
-    // TODO: Lines
-    { duration: 4000, line: "WHAT. IS. THAT?" },
-    { duration: 4000, line: "It's a... GIGACAT" },
-    { duration: 4000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
-    { duration: 4000, line: 'Quick, go get the CATNIP' },
-    { duration: 4000, line: 'We need to FEED THE BEAST' },
-    { duration: 4000, line: 'KEEP FEEDING IT' },
-    { duration: 4000, line: 'WE HAVE TO SAVE THE CATS' },
+    { duration: 4000, line: "Uh oh. This is bad." },
+    { duration: 6000, line: "The cats are seizing the means of production!" },
+    { duration: 4000, line: "It's a full blown revolution!" },
+    { duration: 6000, line: "What will you do? Will you support them?" },
+    { duration: 4000, line: "They're losing numbers FAST" },
+    { duration: 4000, line: "Don't let this be for nothing!" },
     {
-      duration: 4000, line: 'ALMOST THERE!!!', callback: () => {
+      duration: 4000, line: "They're storming the capital!!!", callback: () => {
         S.econ.drain = 0;
         if (!S.story.unlocked.includes('s11')) {
           S.story.unlocked.push('s11');
@@ -1021,7 +1040,7 @@ const storyGigacat = () => {
         }
       }
     },
-    { duration: 4000, line: 'Phew! That was a close one.' },
+    { duration: 4000, line: "The Fat Cats are in charge now." },
   ]);
 };
 
@@ -1029,24 +1048,23 @@ const storyTeracat = () => {
   S.story.milestone = 12;
   S.econ.drain = 7 * 10 ** 10;
   S.story.narrator.addLines([
-    // TODO: Lines
-    { duration: 4000, line: "WHAT. IS. THAT?" },
-    { duration: 4000, line: "It's a... TERACAT" },
-    { duration: 4000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
-    { duration: 4000, line: 'Quick, go get the CATNIP' },
-    { duration: 4000, line: 'We need to FEED THE BEAST' },
-    { duration: 4000, line: 'KEEP FEEDING IT' },
-    { duration: 4000, line: 'WE HAVE TO SAVE THE CATS' },
+    { duration: 4000, line: "<i>*Cat Empire has declared war*</i>" },
+    { duration: 4000, line: "They're launching an all-out invasion!" },
+    { duration: 6000, line: 'Fighting on every front!' },
+    { duration: 6000, line: "It's a sheer battle of numbers" },
+    { duration: 6000, line: '100 cats vs every person!' },
+    { duration: 6000, line: 'An absolute meownstrosity!' },
+    { duration: 6000, line: "They're almost taken the last outpost." },
     {
-      duration: 4000, line: 'ALMOST THERE!!!', callback: () => {
+      duration: 4000, line: "Pushing through the final defences...", callback: () => {
         S.econ.drain = 0;
-        if (!S.story.unlocked.includes('s12')) {
-          S.story.unlocked.push('s12');
-          S.story.narrator.addLines([{ duration: 4000, line: '<i>You have unlocked the Nekro skill</i>' }]);
+        if (!S.story.unlocked.includes('s10')) {
+          S.story.unlocked.push('s10');
+          S.story.narrator.addLines([{ duration: 4000, line: '<i>You have unlocked the War skill</i>' }]);
         }
       }
     },
-    { duration: 4000, line: 'Phew! That was a close one.' },
+    { duration: 4000, line: 'The cats now control the Earth.' },
   ]);
 };
 
@@ -1054,41 +1072,15 @@ const storyPetacat = () => {
   S.story.milestone = 15;
   S.econ.drain = 8 * 10 ** 13;
   S.story.narrator.addLines([
-    // TODO: Lines
-    { duration: 4000, line: "WHAT. IS. THAT?" },
-    { duration: 4000, line: "It's a... PETACAT" },
-    { duration: 4000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
-    { duration: 4000, line: 'Quick, go get the CATNIP' },
-    { duration: 4000, line: 'We need to FEED THE BEAST' },
-    { duration: 4000, line: 'KEEP FEEDING IT' },
-    { duration: 4000, line: 'WE HAVE TO SAVE THE CATS' },
+    { duration: 4000, line: "Okay. So it's called a Megalith." },
+    { duration: 4000, line: "A place of ritual sacrifice" },
+    { duration: 6000, line: "They're trying to unlock the secrets of immortality!" },
+    { duration: 4000, line: "It's costing trillions of cat lives!" },
+    { duration: 4000, line: "What is this insanity???" },
+    { duration: 6000, line: "Is this what happens when you have everything?" },
+    { duration: 6000, line: "You know, I feel sorry for them." },
     {
-      duration: 4000, line: 'ALMOST THERE!!!', callback: () => {
-        S.econ.drain = 0;
-        if (!S.story.unlocked.includes('s8')) {
-          S.story.unlocked.push('s8');
-          S.story.narrator.addLines([{ duration: 4000, line: '<i>You have unlocked the Space skill</i>' }]);
-        }
-      }
-    },
-    { duration: 4000, line: 'Phew! That was a close one.' },
-  ]);
-};
-
-const storyExacat = () => {
-  S.story.milestone = 18;
-  S.econ.drain = 10 ** 17;
-  S.story.narrator.addLines([
-    // TODO: Lines
-    { duration: 4000, line: "WHAT. IS. THAT?" },
-    { duration: 4000, line: "It's a... EXACAT" },
-    { duration: 4000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
-    { duration: 4000, line: 'Quick, go get the CATNIP' },
-    { duration: 4000, line: 'We need to FEED THE BEAST' },
-    { duration: 4000, line: 'KEEP FEEDING IT' },
-    { duration: 4000, line: 'WE HAVE TO SAVE THE CATS' },
-    {
-      duration: 4000, line: 'ALMOST THERE!!!', callback: () => {
+      duration: 6000, line: 'In the end they became their own demise...', callback: () => {
         S.econ.drain = 0;
         if (!S.story.unlocked.includes('s12')) {
           S.story.unlocked.push('s12');
@@ -1096,7 +1088,33 @@ const storyExacat = () => {
         }
       }
     },
-    { duration: 4000, line: 'Phew! That was a close one.' },
+    { duration: 4000, line: 'WAIT. WHAT!?!' },
+    { duration: 4000, line: 'The Nekomancers have uncovered the key to resurrection.' },
+    { duration: 4000, line: 'I did not sign up for this. Did you?' },
+  ]);
+};
+
+const storyExacat = () => {
+  S.story.milestone = 18;
+  S.econ.drain = 10 ** 17;
+  S.story.narrator.addLines([
+    { duration: 6000, line: "The cats have launched a space program." },
+    { duration: 4000, line: "Their ships are fueled by... catpower!" },
+    { duration: 4000, line: "Just pushing each other up!" },
+    { duration: 4000, line: "We have liftoff!" },
+    { duration: 4000, line: 'Outwards and onwards to the stars' },
+    { duration: 4000, line: 'KEEP GOING' },
+    {
+      duration: 4000, line: "They've nearly escaped the Earth's gravity", callback: () => {
+        S.econ.drain = 0;
+        if (!S.story.unlocked.includes('s8')) {
+          S.story.unlocked.push('s8');
+          S.story.narrator.addLines([{ duration: 4000, line: '<i>You have unlocked the Space skill</i>' }]);
+        }
+      }
+    },
+    { duration: 4000, line: "They're off to explore the galaxy" },
+    { duration: 4000, line: "I wonder where they'll go" },
   ]);
 };
 
