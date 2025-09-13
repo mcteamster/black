@@ -3,7 +3,7 @@ body {
   background: hsl(140, 50%, 50%);
   color: white;
   font-family: 'Courier New', Courier, monospace;
-  font-size: 1.5em;
+  font-size: 1.2em;
   text-align: center;
   touch-action: manipulation;
   user-select: none;
