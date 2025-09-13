@@ -75,7 +75,6 @@ const startGame = () => {
 };
 
 const saveGame = () => {
-  console.debug('Saving Game');
   const saveData = JSON.stringify(S);
   localStorage.setItem('mcteamster.black.savedata', saveData);
 };
@@ -115,7 +114,6 @@ const loadGame = () => {
 };
 
 const resetGame = () => {
-  console.debug('Resetting Game');
   localStorage.removeItem('mcteamster.black.savedata');
   onbeforeunload = undefined;
   location.reload();
@@ -826,7 +824,7 @@ const skillRegister = {
     name: 'Times',
     icon: '&#x274E;',
     effect: '+0.1x',
-    label: 'Times: Increase the Mult for cats per click by 0.1x. Let the good times roll.',
+    label: "Times: Increase the Mult for cats per click by 0.1x. It's always a good time.",
   },
   s4: {
     generator: (props) => { return new MediaSkill(props) },
@@ -1298,11 +1296,9 @@ const tickInterval = setInterval(() => {
 // Menu Buttons
 E.pause.addEventListener('click', (event) => {
   E.menu.classList.toggle('hidden');
-  // E.menu.style.background = E.body.style.background;
   event.stopPropagation();
 });
 E.mute.addEventListener('click', (event) => {
-  console.debug('Toggling Mute');
   S.meta.mute = !S.meta.mute;
   updateHud();
   event.stopPropagation();
@@ -1344,7 +1340,6 @@ document.addEventListener('keyup', hotkeyup, false);
 /* ========= Init ========= */
 // Check for Meta In-App Browsers
 if (navigator.userAgent.match(/FBAN|FBAV|Instagram/i)) {
-  console.warn('In-app browser detected');
   document.body.outerHTML = `
     <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);">
       Please open this page in your primary browser for the best gameplay experience
