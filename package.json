@@ -10,7 +10,7 @@
     "esbuild": "0.25.9"
   },
   "scripts": {
-    "build": "rm -rf dist; cp -r src/ dist/; esbuild src/styles.css --minify --outfile=dist/styles.css; esbuild src/index.js --minify --outfile=dist/index.js;",
+    "build": "rm -rf dist; cp -r src/ dist/; sed -i '' 's/^[ \t]*//' dist/index.html; esbuild src/styles.css --minify --outfile=dist/styles.css; esbuild src/index.js --minify --outfile=dist/index.js;",
     "deploy": "mcdeploy black"
   },
   "repository": {
