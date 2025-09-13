@@ -293,9 +293,9 @@ const updateBalance = (cats) => {
       S.meta.freeze = true;
       S.canvas.cats = [];
       S.story.narrator.addLines([
-        { predicate: -Infinity, duration: 4000, line: "Oh no, we lost all the cats...", },
-        { predicate: -Infinity, duration: 4000, line: "Man, my boss is gonna be so mad.", callback: endPlaythrough },
-        { predicate: -Infinity, line: '<i>Fin.</i>' },
+        { duration: 4000, line: "Oh no, we lost all the cats...", },
+        { duration: 4000, line: "Man, my boss is gonna be so mad.", callback: endPlaythrough },
+        { line: '<i>Fin.</i>' },
       ]);
     } else if (cats > 0) {
       // Render New Cats, Remove Oldest
@@ -515,8 +515,8 @@ class HandsSkill extends Skill {
       if (this.level >= 10000 && !S.story.unlocked.includes('s2')) {
         S.story.unlocked.push('s2');
         S.story.narrator.addLines([
-          { predicate: 0, duration: 4000, line: "The cats have industrialised." },
-          { predicate: 0, duration: 4000, line: "<i>You have unlocked the Factory skill</i>" },
+          { duration: 4000, line: "The cats have industrialised." },
+          { duration: 4000, line: "<i>You have unlocked the Factory skill</i>" },
         ]);
       }
     }
@@ -562,8 +562,8 @@ class TimesSkill extends Skill {
       if (this.level >= 1000 && !S.story.unlocked.includes('s4')) {
         S.story.unlocked.push('s4');
         S.story.narrator.addLines([
-          { predicate: 0, duration: 4000, line: "The cats have developed propaganda." },
-          { predicate: 0, duration: 4000, line: "<i>You have unlocked the Media skill</i>" },
+          { duration: 4000, line: "The cats have developed propaganda." },
+          { duration: 4000, line: "<i>You have unlocked the Media skill</i>" },
         ]);
       }
     }
@@ -609,8 +609,8 @@ class GrowSkill extends Skill {
       if (this.level >= 100 && !S.story.unlocked.includes('s6')) {
         S.story.unlocked.push('s6');
         S.story.narrator.addLines([
-          { predicate: 0, duration: 4000, line: "The cats have advanced veterinary science." },
-          { predicate: 0, duration: 4000, line: "<i>You have unlocked the Vets skill</i>" },
+          { duration: 4000, line: "The cats have advanced veterinary science." },
+          { duration: 4000, line: "<i>You have unlocked the Vets skill</i>" },
         ]);
       }
     }
@@ -913,7 +913,7 @@ class Narrator {
 
   loadLines() {
     this.queue = [
-      { predicate: 0, line: 'please DO NOT the cat' },
+      { line: 'please DO NOT the cat' },
       { predicate: 13, line: 'AHHH! What are you doing?' },
       { predicate: 25, line: "HEY!" },
       { predicate: 40, line: "Quit it!" },
@@ -954,7 +954,7 @@ class Narrator {
   nextLine() {
     if (!this.currentLine.duration || (new Date()).getTime() > (this.currentLine.timestamp + this.currentLine.duration)) {
       if (this.queue.length > 0) {
-        if ((typeof (this.queue[0].predicate) == 'number' && S.econ.balance > this.queue[0].predicate) || (typeof (this.queue[0].predicate) == 'function' && this.queue[0].predicate())) {
+        if ((!this.queue[0].predicate) || (typeof (this.queue[0].predicate) == 'number' && S.econ.balance > this.queue[0].predicate) || (typeof (this.queue[0].predicate) == 'function' && this.queue[0].predicate())) {
           if (this.currentLine.callback) {
             this.currentLine.callback();
           }
@@ -984,19 +984,19 @@ const storyMegacat = () => {
   }
   S.econ.drain = 50000;
   S.story.narrator.addLines([
-    { predicate: 0, duration: 4000, line: "WHAT. IS. THAT?" },
-    { predicate: 0, duration: 4000, line: "It's a... MEGACAT" },
-    { predicate: 0, duration: 4000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
-    { predicate: 0, duration: 4000, line: 'Quick, go get the CATNIP' },
-    { predicate: 0, duration: 4000, line: 'We need to FEED THE BEAST' },
-    { predicate: 0, duration: 4000, line: 'KEEP FEEDING IT' },
-    { predicate: 0, duration: 4000, line: 'WE HAVE TO SAVE THE CATS' },
+    { duration: 4000, line: "WHAT. IS. THAT?" },
+    { duration: 4000, line: "It's a... MEGACAT" },
+    { duration: 4000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
+    { duration: 4000, line: 'Quick, go get the CATNIP' },
+    { duration: 4000, line: 'We need to FEED THE BEAST' },
+    { duration: 4000, line: 'KEEP FEEDING IT' },
+    { duration: 4000, line: 'WE HAVE TO SAVE THE CATS' },
     {
-      predicate: 0, duration: 4000, line: 'ALMOST THERE!!!', callback: () => {
+      duration: 4000, line: 'ALMOST THERE!!!', callback: () => {
         S.econ.drain = 0;
       }
     },
-    { predicate: 0, duration: 4000, line: 'Phew! That was a close one.' },
+    { duration: 4000, line: 'Phew! That was a close one.' },
   ]);
 };
 
@@ -1005,23 +1005,23 @@ const storyGigacat = () => {
   S.econ.drain = 6 * 10 ** 7;
   S.story.narrator.addLines([
     // TODO: Lines
-    { predicate: 0, duration: 4000, line: "WHAT. IS. THAT?" },
-    { predicate: 0, duration: 4000, line: "It's a... GIGACAT" },
-    { predicate: 0, duration: 4000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
-    { predicate: 0, duration: 4000, line: 'Quick, go get the CATNIP' },
-    { predicate: 0, duration: 4000, line: 'We need to FEED THE BEAST' },
-    { predicate: 0, duration: 4000, line: 'KEEP FEEDING IT' },
-    { predicate: 0, duration: 4000, line: 'WE HAVE TO SAVE THE CATS' },
+    { duration: 4000, line: "WHAT. IS. THAT?" },
+    { duration: 4000, line: "It's a... GIGACAT" },
+    { duration: 4000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
+    { duration: 4000, line: 'Quick, go get the CATNIP' },
+    { duration: 4000, line: 'We need to FEED THE BEAST' },
+    { duration: 4000, line: 'KEEP FEEDING IT' },
+    { duration: 4000, line: 'WE HAVE TO SAVE THE CATS' },
     {
-      predicate: 0, duration: 4000, line: 'ALMOST THERE!!!', callback: () => {
+      duration: 4000, line: 'ALMOST THERE!!!', callback: () => {
         S.econ.drain = 0;
         if (!S.story.unlocked.includes('s11')) {
           S.story.unlocked.push('s11');
-          S.story.narrator.addLines([{ predicate: 0, duration: 4000, line: '<i>You have unlocked the Payday skill</i>' }]);
+          S.story.narrator.addLines([{ duration: 4000, line: '<i>You have unlocked the Payday skill</i>' }]);
         }
       }
     },
-    { predicate: 0, duration: 4000, line: 'Phew! That was a close one.' },
+    { duration: 4000, line: 'Phew! That was a close one.' },
   ]);
 };
 
@@ -1030,23 +1030,23 @@ const storyTeracat = () => {
   S.econ.drain = 7 * 10 ** 10;
   S.story.narrator.addLines([
     // TODO: Lines
-    { predicate: 0, duration: 4000, line: "WHAT. IS. THAT?" },
-    { predicate: 0, duration: 4000, line: "It's a... TERACAT" },
-    { predicate: 0, duration: 4000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
-    { predicate: 0, duration: 4000, line: 'Quick, go get the CATNIP' },
-    { predicate: 0, duration: 4000, line: 'We need to FEED THE BEAST' },
-    { predicate: 0, duration: 4000, line: 'KEEP FEEDING IT' },
-    { predicate: 0, duration: 4000, line: 'WE HAVE TO SAVE THE CATS' },
+    { duration: 4000, line: "WHAT. IS. THAT?" },
+    { duration: 4000, line: "It's a... TERACAT" },
+    { duration: 4000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
+    { duration: 4000, line: 'Quick, go get the CATNIP' },
+    { duration: 4000, line: 'We need to FEED THE BEAST' },
+    { duration: 4000, line: 'KEEP FEEDING IT' },
+    { duration: 4000, line: 'WE HAVE TO SAVE THE CATS' },
     {
-      predicate: 0, duration: 4000, line: 'ALMOST THERE!!!', callback: () => {
+      duration: 4000, line: 'ALMOST THERE!!!', callback: () => {
         S.econ.drain = 0;
         if (!S.story.unlocked.includes('s12')) {
           S.story.unlocked.push('s12');
-          S.story.narrator.addLines([{ predicate: 0, duration: 4000, line: '<i>You have unlocked the Nekro skill</i>' }]);
+          S.story.narrator.addLines([{ duration: 4000, line: '<i>You have unlocked the Nekro skill</i>' }]);
         }
       }
     },
-    { predicate: 0, duration: 4000, line: 'Phew! That was a close one.' },
+    { duration: 4000, line: 'Phew! That was a close one.' },
   ]);
 };
 
@@ -1055,23 +1055,23 @@ const storyPetacat = () => {
   S.econ.drain = 8 * 10 ** 13;
   S.story.narrator.addLines([
     // TODO: Lines
-    { predicate: 0, duration: 4000, line: "WHAT. IS. THAT?" },
-    { predicate: 0, duration: 4000, line: "It's a... PETACAT" },
-    { predicate: 0, duration: 4000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
-    { predicate: 0, duration: 4000, line: 'Quick, go get the CATNIP' },
-    { predicate: 0, duration: 4000, line: 'We need to FEED THE BEAST' },
-    { predicate: 0, duration: 4000, line: 'KEEP FEEDING IT' },
-    { predicate: 0, duration: 4000, line: 'WE HAVE TO SAVE THE CATS' },
+    { duration: 4000, line: "WHAT. IS. THAT?" },
+    { duration: 4000, line: "It's a... PETACAT" },
+    { duration: 4000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
+    { duration: 4000, line: 'Quick, go get the CATNIP' },
+    { duration: 4000, line: 'We need to FEED THE BEAST' },
+    { duration: 4000, line: 'KEEP FEEDING IT' },
+    { duration: 4000, line: 'WE HAVE TO SAVE THE CATS' },
     {
-      predicate: 0, duration: 4000, line: 'ALMOST THERE!!!', callback: () => {
+      duration: 4000, line: 'ALMOST THERE!!!', callback: () => {
         S.econ.drain = 0;
         if (!S.story.unlocked.includes('s8')) {
           S.story.unlocked.push('s8');
-          S.story.narrator.addLines([{ predicate: 0, duration: 4000, line: '<i>You have unlocked the Space skill</i>' }]);
+          S.story.narrator.addLines([{ duration: 4000, line: '<i>You have unlocked the Space skill</i>' }]);
         }
       }
     },
-    { predicate: 0, duration: 4000, line: 'Phew! That was a close one.' },
+    { duration: 4000, line: 'Phew! That was a close one.' },
   ]);
 };
 
@@ -1080,23 +1080,23 @@ const storyExacat = () => {
   S.econ.drain = 10 ** 17;
   S.story.narrator.addLines([
     // TODO: Lines
-    { predicate: 0, duration: 4000, line: "WHAT. IS. THAT?" },
-    { predicate: 0, duration: 4000, line: "It's a... EXACAT" },
-    { predicate: 0, duration: 4000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
-    { predicate: 0, duration: 4000, line: 'Quick, go get the CATNIP' },
-    { predicate: 0, duration: 4000, line: 'We need to FEED THE BEAST' },
-    { predicate: 0, duration: 4000, line: 'KEEP FEEDING IT' },
-    { predicate: 0, duration: 4000, line: 'WE HAVE TO SAVE THE CATS' },
+    { duration: 4000, line: "WHAT. IS. THAT?" },
+    { duration: 4000, line: "It's a... EXACAT" },
+    { duration: 4000, line: 'ITS CONSUMING ALL THE OTHER CATS' },
+    { duration: 4000, line: 'Quick, go get the CATNIP' },
+    { duration: 4000, line: 'We need to FEED THE BEAST' },
+    { duration: 4000, line: 'KEEP FEEDING IT' },
+    { duration: 4000, line: 'WE HAVE TO SAVE THE CATS' },
     {
-      predicate: 0, duration: 4000, line: 'ALMOST THERE!!!', callback: () => {
+      duration: 4000, line: 'ALMOST THERE!!!', callback: () => {
         S.econ.drain = 0;
         if (!S.story.unlocked.includes('s12')) {
           S.story.unlocked.push('s12');
-          S.story.narrator.addLines([{ predicate: 0, duration: 4000, line: '<i>You have unlocked the Nekro skill</i>' }]);
+          S.story.narrator.addLines([{ duration: 4000, line: '<i>You have unlocked the Nekro skill</i>' }]);
         }
       }
     },
-    { predicate: 0, duration: 4000, line: 'Phew! That was a close one.' },
+    { duration: 4000, line: 'Phew! That was a close one.' },
   ]);
 };
 
@@ -1108,26 +1108,26 @@ const storyInfinity = () => {
   E.interest.innerHTML = '';
   S.canvas.cats = [];
   S.story.narrator.addLines([
-    { predicate: 0, duration: 4000, line: "Well. You've done it." },
-    { predicate: 0, duration: 4000, line: "The whole universe is full of cats" },
-    { predicate: 0, duration: 4000, line: "I hope you're happy" },
-    { predicate: 0, duration: 4000, line: "You can finally go do someting else with your life" },
-    { predicate: 0, duration: 4000, line: "What?" },
-    { predicate: 0, duration: 4000, line: "You're wondering what's next?" },
-    { predicate: 0, duration: 4000, line: "Seriously. There's nothing." },
-    { predicate: 0, duration: 4000, line: "..." },
-    { predicate: 0, duration: 4000, line: "Oh go away. I've got a huge mess to clean up" },
-    { predicate: 0, duration: 4000, line: "<i>*sigh*</i>" },
-    { predicate: 0, duration: 6000, line: "Have you heard the saying about curiosity?", callback: () => {
+    { duration: 4000, line: "Well. You've done it." },
+    { duration: 4000, line: "The whole universe is full of cats" },
+    { duration: 4000, line: "I hope you're happy" },
+    { duration: 4000, line: "You can finally go do someting else with your life" },
+    { duration: 4000, line: "What?" },
+    { duration: 4000, line: "You're wondering what's next?" },
+    { duration: 4000, line: "Seriously. There's nothing." },
+    { duration: 4000, line: "..." },
+    { duration: 4000, line: "Oh go away. I've got a huge mess to clean up" },
+    { duration: 4000, line: "<i>*sigh*</i>" },
+    { duration: 6000, line: "Have you heard the saying about curiosity?", callback: () => {
         E.body.style.background = 'white';
       },
     },
-    { predicate: 0, duration: 6000, line: '<i>Fin.</i>', callback: endPlaythrough },
-    { predicate: 0, line: '<i>Fin.</i>' },
+    { duration: 6000, line: '<i>Fin.</i>', callback: endPlaythrough },
+    { line: '<i>Fin.</i>' },
   ]);
   if (!S.story.unlocked.includes('s9')) {
     S.story.unlocked.push('s9');
-    S.story.narrator.addLines([{ predicate: 0, duration: 4000, line: '<i>You have unlocked the Anti-Catter skill</i>' }]);
+    S.story.narrator.addLines([{ duration: 4000, line: '<i>You have unlocked the Anti-Catter skill</i>' }]);
   }
 };
 
@@ -1135,11 +1135,11 @@ const storyAutocat = () => {
   S.meta.freeze = true;
   S.canvas.cats = [];
   S.story.narrator.addLines([
-    { predicate: 0, duration: 4000, line: 'You did not the cat.' },
-    { predicate: 0, duration: 4000, line: 'Thanks for watching it!' },
-    { predicate: 0, duration: 4000, line: "You've saved me from a lot of trouble. Here have this:" },
-    { predicate: 0, duration: 4000, line: '<i>You have unlocked the Auto skill</i>', callback: endPlaythrough },
-    { predicate: 0, line: '<i>Fin.</i>' },
+    { duration: 4000, line: 'You did not the cat.' },
+    { duration: 4000, line: 'Thanks for watching it!' },
+    { duration: 4000, line: "You've saved me from a lot of trouble. Here have this..." },
+    { duration: 4000, line: '<i>You have unlocked the Auto skill</i>', callback: endPlaythrough },
+    { line: '<i>Fin.</i>' },
   ]);
 };
 
@@ -1193,7 +1193,7 @@ const tickInterval = setInterval(() => {
   const elapsedTime = (new Date().getTime() - S.meta.starttime);
 
   // Auto Save
-  if ((elapsedTime % 300000) < 1000) {
+  if ((elapsedTime % 120000) < 1000) {
     saveGame();
   }
 
@@ -1205,7 +1205,7 @@ const tickInterval = setInterval(() => {
         S.story.unlocked.push('s1');
         S.skills.selected.push('s1');
         S.skills.bindings.Q = skillRegister['s1'].generator({ key: 'Q' });
-        S.story.narrator.addLines([{ predicate: 0, line: "I'll find someone to take them off your HANDS" }]);
+        S.story.narrator.addLines([{ line: "I'll find someone to take them off your HANDS" }]);
       }
     }
     if (!S.story.unlocked.includes('s3')) {
@@ -1213,7 +1213,7 @@ const tickInterval = setInterval(() => {
         S.story.unlocked.push('s3');
         S.skills.selected.push('s3');
         S.skills.bindings.W = skillRegister['s3'].generator({ key: 'W' });
-        S.story.narrator.addLines([{ predicate: 0, line: "They'll go out and tell others about the good TIMES" }]);
+        S.story.narrator.addLines([{ line: "They'll go out and tell others about the good TIMES" }]);
         S.story.narrator.sayLine("")
       }
     }
@@ -1222,7 +1222,7 @@ const tickInterval = setInterval(() => {
         S.story.unlocked.push('s5');
         S.skills.selected.push('s5');
         S.skills.bindings.E = skillRegister['s5'].generator({ key: 'E' });
-        S.story.narrator.addLines([{ predicate: 0, line: "They want to have kittens! Maybe we should give them space to GROW?" }]);
+        S.story.narrator.addLines([{ line: "They want to have kittens! Maybe we should give them space to GROW?" }]);
       }
     }
 
@@ -1243,7 +1243,7 @@ const tickInterval = setInterval(() => {
 
     // Did not the cat
     if (!S.story.unlocked.includes('s13')) {
-      if (S.econ.balance == 1 && elapsedTime > 30000) {
+      if (S.econ.balance == 1 && elapsedTime > 20000) {
         S.story.unlocked.push('s13');
         storyAutocat();
       }
@@ -1336,8 +1336,3 @@ if (navigator.userAgent.match(/FBAN|FBAV|Instagram/i)) {
 } else {
   loadGame() || startGame();
 }
-
-/* ========= Debug ========= */
-// S.story.unlocked = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11', 's12', 's13']
-// S.econ.balance = 9.99 * 10**99
-// S.econ.drain = 1
