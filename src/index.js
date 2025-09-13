@@ -45,16 +45,16 @@ let S = {
 };
 
 const startGame = () => {
-  E.launch.classList.add('hidden');
-  S.meta.active = true;
-  S.meta.starttime = (new Date()).getTime();
+  E.launch.classList.add('hidden')
+  S.meta.active = true
+  S.meta.starttime = (new Date()).getTime()
 
   // First Cat
-  S.canvas.cats.push(new Cat({ coordinates: [0, 0] }));
+  S.canvas.cats.push(new Cat({ coordinates: [0, 0] }))
 
   // Apply Skill Selection
-  registerKeys();
-  S.skills.selected = S.skills.selected.sort((a, b) => { return (a.substring(1) - b.substring(1)) }); // sort in alphnumeric order
+  registerKeys()
+  S.skills.selected = S.skills.selected.sort((a, b) => { return (a.substring(1) - b.substring(1)) }) // sort in alphnumeric order
   if (S.skills.selected.length == 1 && S.skills.selected[0] == 's13') {
     // Edge case for Auto only
     S.skills.bindings = {
@@ -62,26 +62,26 @@ const startGame = () => {
       W: null,
       E: null,
       R: skillRegister.s13.generator({ key: 'R' })
-    };
+    }
   } else {
-    Object.keys(S.skills.bindings).forEach((key, index) => { S.skills.bindings[key] = S.skills.selected[index] ? skillRegister[S.skills.selected[index]].generator({ key: key }) : null });
+    Object.keys(S.skills.bindings).forEach((key, index) => { S.skills.bindings[key] = S.skills.selected[index] ? skillRegister[S.skills.selected[index]].generator({ key: key }) : null })
   }
 
   // Narrator
-  S.story.narrator = new Narrator();
+  S.story.narrator = new Narrator()
 
   // UI
-  updateBalance(0);
+  updateBalance(0)
 };
 
 const saveGame = () => {
-  const saveData = JSON.stringify(S);
-  localStorage.setItem('mcteamster.black.savedata', saveData);
+  const saveData = JSON.stringify(S)
+  localStorage.setItem('mcteamster.black.savedata', saveData)
 };
 onbeforeunload = saveGame;
 
 const loadGame = () => {
-  const loadData = localStorage.getItem('mcteamster.black.savedata');
+  const loadData = localStorage.getItem('mcteamster.black.savedata')
   if (loadData) {
     S = JSON.parse(loadData);
 
@@ -292,7 +292,7 @@ const updateBalance = (cats) => {
       S.canvas.cats = [];
       S.story.narrator.addLines([
         { duration: 4000, line: "Oh no, we lost all the cats...", },
-        { duration: 4000, line: "Man, my boss is gonna be so mad.", callback: endPlaythrough },
+        { duration: 4000, line: "Man, my boss is gonna be so mad", callback: endPlaythrough },
         { line: '<i>Fin.</i>' },
       ]);
     } else if (cats > 0) {
@@ -620,7 +620,7 @@ class GrowSkill extends Skill {
   }
 }
 
-// #6 - Vets: 2x Interest
+// #6 - Vets: +1% Interest
 class VetsSkill extends Skill {
   constructor(props) {
     super({
@@ -633,11 +633,7 @@ class VetsSkill extends Skill {
   use() {
     if (this.buy()) {
       this.cost *= (this.level + 1) // Factorial
-      if (S.econ.interest == 0) {
-        S.econ.interest = 0.01
-      } else {
-        S.econ.interest *= 2
-      }
+      S.econ.interest += 1
       updateBalance(0)
     }
   }
@@ -664,13 +660,13 @@ class CatnipSkill extends Skill {
   }
 }
 
-// #8 - Space: Delayed 10x return of current balance
+// #8 - Space: Delayed 100x return of current balance
 class SpaceSkill extends Skill {
   constructor(props) {
     super({
       id: 's8',
       cost: 0,
-      cooldown: 300000,
+      cooldown: 60000,
       timestamp: 0,
       ...props,
     })
@@ -680,10 +676,11 @@ class SpaceSkill extends Skill {
     const now = (new Date()).getTime()
     if (now > (this.timestamp + (this.cooldown * S.econ.discount / 100))) {
       this.timestamp = now;
-      const bounty = S.econ.balance * 10
+      const bounty = S.econ.balance * 100
+      const playthrough = S.meta.playthrough
       setTimeout(() => {
-        updateBalance(bounty)
-      }, this.cooldown)
+        (playthrough == S.meta.playthrough) && updateBalance(bounty)
+      }, (this.cooldown * S.econ.discount / 100))
       updateHud()
     }
   }
@@ -695,7 +692,7 @@ class AntiCatterSkill extends Skill {
     super({
       id: 's9',
       cost: 0,
-      cooldown: 30000,
+      cooldown: 5000,
       timestamp: 0,
       ...props,
     })
@@ -770,6 +767,7 @@ class WarSkill extends Skill {
       S.econ.base = 1000 * (S.story.unlocked.length)
       S.econ.mult = 1000 * (S.story.unlocked.length)
       S.econ.discount *= 2
+      S.story.milestone = 6; // Skip Mega
     }
   }
 }
@@ -799,7 +797,7 @@ class AutoSkill extends Skill {
       setTimeout(() => {
         if (this.debounce) {
           this.cost = 1;
-          S.econ.auto = S.story.unlocked.length;
+          S.econ.auto = S.story.unlocked.length * 5;
           updateBalance(0);
           this.debounce = false;
         }
@@ -821,21 +819,21 @@ const skillRegister = {
     generator: (props) => { return new FactorySkill(props) },
     name: 'Factory',
     icon: '&#x1F3ED;',
-    effect: '2x &#x270B;',
+    effect: 'x2 &#x270B;',
     label: 'Factory: Double the current Base. Cats view themselves as the boss.',
   },
   s3: {
     generator: (props) => { return new TimesSkill(props) },
     name: 'Times',
     icon: '&#x274E;',
-    effect: '+0.1x',
+    effect: '+0.1',
     label: "Times: Increase the Mult for cats per click by 0.1x. It's always a good time.",
   },
   s4: {
     generator: (props) => { return new MediaSkill(props) },
     name: 'Media',
     icon: '&#x1F3AC;',
-    effect: '2x &#x274E;',
+    effect: 'x2 &#x274E;',
     label: 'Media: Double the current Mult. Cats have gone viral and taken over all forms of media.',
   },
   s5: {
@@ -849,7 +847,7 @@ const skillRegister = {
     generator: (props) => { return new VetsSkill(props) },
     name: 'Vets',
     icon: '&#x1F3E5;',
-    effect: '2x &#x1F4C8;',
+    effect: '+1% &#x1F4C8;',
     label: 'Vets: Double the current Interest. Advances in modern feline medicine have increased life expectancy and kitten birth rates.',
   },
   s7: {
@@ -898,8 +896,8 @@ const skillRegister = {
     generator: (props) => { return new AutoSkill(props) },
     name: 'Auto',
     icon: '&#x2699;&#xFE0F;',
-    effect: () => { return `Auto:${S.story.unlocked.length}` },
-    label: 'Auto: 1 automatic click per second for each unlocked skill. Can be toggled on/off.',
+    effect: () => { return `Auto:${5 * S.story.unlocked.length}` },
+    label: 'Auto: 5 automatic clicks per second for each unlocked skill. Can be toggled on/off.',
   },
 }
 
@@ -1061,8 +1059,8 @@ const storyTeracat = () => {
     {
       duration: 4000, line: "Pushing through the final defences...", callback: () => {
         S.econ.drain = 0;
-        if (!S.story.unlocked.includes('s10')) {
-          S.story.unlocked.push('s10');
+        if (!S.story.unlocked.includes('s12')) {
+          S.story.unlocked.push('s12');
           S.story.narrator.addLines([{ duration: 4000, line: '<i>You have unlocked the War skill</i>' }]);
         }
       }
@@ -1084,8 +1082,8 @@ const storyPetacat = () => {
     {
       duration: 6000, line: 'In the end they became their own demise...', callback: () => {
         S.econ.drain = 0;
-        if (!S.story.unlocked.includes('s12')) {
-          S.story.unlocked.push('s12');
+        if (!S.story.unlocked.includes('s10')) {
+          S.story.unlocked.push('s10');
           S.story.narrator.addLines([{ duration: 4000, line: '<i>You have unlocked the Nekro skill</i>' }]);
         }
       }
@@ -1137,7 +1135,8 @@ const storyInfinity = () => {
     { duration: 4000, line: "..." },
     { duration: 4000, line: "Oh go away. I've got a huge mess to clean up" },
     { duration: 4000, line: "<i>*sigh*</i>" },
-    { duration: 6000, line: "Have you heard the saying about curiosity?", callback: () => {
+    {
+      duration: 6000, line: "Have you heard the saying about curiosity?", callback: () => {
         E.body.style.background = 'white';
       },
     },
@@ -1281,7 +1280,7 @@ const tickInterval = setInterval(() => {
       for (let i = 0; i < S.econ.auto; i++) {
         setTimeout(() => {
           patCat();
-        }, 70 * i)
+        }, 10 * i)
       }
     }
 
