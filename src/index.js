@@ -191,7 +191,7 @@ const updateHud = () => {
   E.counter.innerHTML = ((S.meta.playthrough == 1 && S.econ.balance == 1) || S.econ.balance <= 0 || S.econ.balance > 10 ** 100) ? '' : `${blackCat} ${notation(S.econ.balance)}`;
   E.interest.innerHTML = `
     ${S.econ.interest > 0 ? '&#x1F4C8; ' + (S.econ.interest.toFixed(2)) + '% ps' : ''}
-    ${S.econ.drain > 0 ? '&nbsp;&#x1F4C9 ' + (notation(S.econ.drain, true)) + ' ps' : ''}
+    ${S.econ.drain > 0 ? '&nbsp;&#x1F4C9 -' + (notation(S.econ.drain, true)) + ' ps' : ''}
   `;
   S.econ.drain > 0 ? E.dialogue.style.background = "rgba(255, 0, 0, 0.75)" : E.dialogue.style.background = "rgba(0, 0, 0, 0.75)";
   E.stats.innerHTML = `
@@ -444,6 +444,7 @@ class Skill {
       this.enable()
     }
     this.repeat = null;
+    this.accelerate = 1;
   }
 
   assign() {
@@ -456,8 +457,11 @@ class Skill {
             this.use();
           } else if (!this.repeat) {
             this.repeat = setInterval(() => {
-              this.use();
-            }, 25);
+              for (let i = 0; i < this.accelerate; i++) {
+                this.use();
+              }
+              this.accelerate++;
+            }, 50);
           }
         }
         event.stopPropagation();
@@ -469,6 +473,7 @@ class Skill {
         if (this.repeat) {
           clearInterval(this.repeat);
           this.repeat = null;
+          this.accelerate = 1;
         }
         event.stopPropagation();
       }
@@ -1070,11 +1075,10 @@ const storyPetacat = () => {
   S.story.milestone = 15;
   S.econ.drain = 8 * 10 ** 13;
   S.story.narrator.addLines([
-    { duration: 4000, line: "Okay. So it's called a Megalith." },
+    { duration: 4000, line: "Okay. So it's a Megalith." },
     { duration: 4000, line: "A place of ritual sacrifice" },
     { duration: 6000, line: "They're trying to unlock the secrets of immortality!" },
-    { duration: 4000, line: "It's costing trillions of cat lives!" },
-    { duration: 4000, line: "What is this insanity???" },
+    { duration: 4000, line: "It's costing trillions of lives!" },
     { duration: 6000, line: "Is this what happens when you have everything?" },
     { duration: 6000, line: "You know, I feel sorry for them." },
     {
@@ -1099,7 +1103,6 @@ const storyExacat = () => {
     { duration: 6000, line: "The cats have launched a space program." },
     { duration: 4000, line: "Their ships are fueled by... catpower!" },
     { duration: 4000, line: "Just pushing each other up!" },
-    { duration: 4000, line: "We have liftoff!" },
     { duration: 4000, line: 'Outwards and onwards to the stars' },
     { duration: 4000, line: 'KEEP GOING' },
     {
@@ -1124,7 +1127,7 @@ const storyInfinity = () => {
   E.interest.innerHTML = '';
   S.canvas.cats = [];
   S.story.narrator.addLines([
-    { duration: 4000, line: "Well. You've done it." },
+    { duration: 4000, line: "Well. You've done it" },
     { duration: 4000, line: "The whole universe is full of cats" },
     { duration: 4000, line: "I hope you're happy" },
     { duration: 4000, line: "You can finally go do someting else with your life" },
