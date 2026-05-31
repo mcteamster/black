@@ -7,7 +7,7 @@
     "doc": "docs"
   },
   "devDependencies": {
-    "esbuild": "0.25.9"
+    "esbuild": "^0.28.0"
   },
   "scripts": {
     "build": "rm -rf dist; cp -r src/ dist/; sed -i '' 's/^[ \t]*//' dist/index.html; esbuild src/styles.css --minify --outfile=dist/styles.css; esbuild src/index.js --minify --outfile=dist/index.js;"
